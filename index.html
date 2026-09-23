@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="hy">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Մարատ Սարգսյանի արվեստանոց</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Armenian:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --panel:#F5F6F8;
+    --ink:#1B1D22;
+    --ink-soft:#6B7078;
+    --line:#E3E5E9;
+    --accent:#2453D6;
+    --accent-ink:#FFFFFF;
+    --danger:#B3261E;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#121317;
+      --panel:#1B1D22;
+      --ink:#EDEEF1;
+      --ink-soft:#9AA0AA;
+      --line:#2C2F36;
+      --accent:#5B84EE;
+      --accent-ink:#0E1116;
+      --danger:#FF6B61;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121317;
+    --panel:#1B1D22;
+    --ink:#EDEEF1;
+    --ink-soft:#9AA0AA;
+    --line:#2C2F36;
+    --accent:#5B84EE;
+    --accent-ink:#0E1116;
+    --danger:#FF6B61;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Noto Sans Armenian', system-ui, sans-serif;
+    display:flex;
+    flex-direction:column;
+  }
+
+  header{
+    padding:20px clamp(16px,4vw,40px);
+    padding-top:calc(20px + env(safe-area-inset-top, 0px));
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  header .logo{
+    font-weight:700;
+    font-size:clamp(14px, 4vw, 18px);
+    letter-spacing:0.01em;
+    line-height:1.25;
+  }
+  header .logo{ cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+  header .logo #music-icon{ display:inline-block; margin-left:6px; opacity:.7; }
+  header .mode-badge{
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent);
+    background:color-mix(in srgb, var(--accent) 12%, transparent);
+    padding:4px 10px;
+    border-radius:100px;
+  }
+
+  main{
+    flex:1;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  main.center{align-items:center;}
+
+  .screen{width:100%; max-width:520px;}
+  .screen.wide{max-width:960px;}
+  .hidden{display:none;}
+
+  /* --- home: two choices --- */
+  .choices{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:480px){
+    .choices{grid-template-columns:1fr;}
+  }
+  .choice-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:32px 20px;
+    text-align:center;
+    cursor:pointer;
+    font:inherit;
+    color:var(--ink);
+    transition:border-color .15s, transform .1s;
+  }
+  .choice-card:hover{border-color:var(--accent);}
+  .choice-card:active{transform:scale(0.98);}
+  .choice-card:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .choice-card .icon{font-size:30px; margin-bottom:10px;}
+  .choice-card .label{font-size:17px; font-weight:600;}
+
+  h1.title{
+    text-align:center;
+    font-size:24px;
+    margin:0 0 6px;
+  }
+  p.subtitle{
+    text-align:center;
+    color:var(--ink-soft);
+    margin:0 0 28px;
+    font-size:14.5px;
+  }
+
+  /* --- pin screen --- */
+  .pin-box{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:32px 24px;
+    text-align:center;
+  }
+  .pin-inputs{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin:20px 0 14px;
+  }
+  .pin-inputs input{
+    width:48px;
+    height:56px;
+    text-align:center;
+    font-size:24px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  .pin-inputs input:focus{outline:2px solid var(--accent); border-color:var(--accent);}
+  .pin-error{
+    color:var(--danger);
+    font-size:13.5px;
+    min-height:18px;
+    margin-bottom:10px;
+  }
+
+  .btn{
+    display:inline-block;
+    border:none;
+    border-radius:8px;
+    padding:11px 22px;
+    font:inherit;
+    font-weight:600;
+    font-size:14.5px;
+    cursor:pointer;
+  }
+  .btn-primary{background:var(--accent); color:var(--accent-ink);}
+  .btn-secondary{background:var(--panel); color:var(--ink); border:1px solid var(--line);}
+  .btn-danger{background:none; color:var(--danger); border:1px solid var(--danger);}
+  .btn-link{
+    background:none;
+    color:var(--ink-soft);
+    text-decoration:underline;
+    padding:8px;
+  }
+  .btn-sm{padding:7px 12px; font-size:13px;}
+
+  /* --- admin / student dashboard --- */
+  .dash-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:22px;
+    gap:12px;
+  }
+  .section-subhead{
+    margin:0 0 12px;
+  }
+  .section-subhead h2{
+    font-size:15px;
+    margin:0 0 2px;
+  }
+  .section-subhead p{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0;
+  }
+  .admin-block{margin-bottom:30px;}
+  .admin-block:last-child{margin-bottom:0;}
+
+  .menu-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
+    gap:14px;
+  }
+  @media (max-width:420px){
+    .menu-grid{grid-template-columns:1fr;}
+  }
+  .menu-item{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 16px;
+    text-decoration:none;
+    color:var(--ink);
+    text-align:left;
+    font:inherit;
+    cursor:pointer;
+    width:100%;
+  }
+  .menu-item:hover{border-color:var(--accent);}
+  .menu-item:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .menu-item .label{font-weight:600; font-size:15px; margin-bottom:4px;}
+  .menu-item .note{font-size:12.5px; color:var(--ink-soft);}
+
+  /* --- generic content section (shared by every menu item) --- */
+  .content-toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin-bottom:18px;
+  }
+  .content-toolbar .back{flex-shrink:0;}
+  .content-heading{flex:1; min-width:0;}
+  .content-heading h1{font-size:20px; margin:0 0 2px; text-align:left;}
+  .content-heading p{font-size:13px; color:var(--ink-soft); margin:0;}
+
+  .add-post-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:22px;
+  }
+  .add-post-panel h2{font-size:14px; margin:0 0 12px;}
+  .type-tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .type-tab{
+    flex:1;
+    border:1px solid var(--line);
+    background:var(--bg);
+    color:var(--ink-soft);
+    border-radius:8px;
+    padding:9px 6px;
+    font:inherit;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .type-tab.active{border-color:var(--accent); color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, transparent);}
+
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:5px;}
+  .field input[type="text"], .field input[type="url"], .field textarea{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--bg);
+    color:var(--ink);
+    font:inherit;
+    font-size:14px;
+    padding:10px 12px;
+    resize:vertical;
+  }
+  .field textarea{min-height:80px;}
+  .field .hint{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+  .form-error{color:var(--danger); font-size:13px; min-height:16px; margin-bottom:8px;}
+  .form-success{color:var(--accent); font-size:13px; min-height:16px; margin-bottom:8px;}
+
+  .post-list{display:flex; flex-direction:column; gap:14px;}
+  .post-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+  }
+  .post-card .post-meta{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:10px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+  .post-card .post-text{font-size:14.5px; line-height:1.55; white-space:pre-wrap;}
+  .post-card img{max-width:100%; border-radius:8px; display:block;}
+  .video-wrapper{
+    position:relative;
+    width:100%;
+    padding-top:56.25%;
+    border-radius:8px;
+    overflow:hidden;
+    background:#000;
+  }
+  .video-wrapper iframe, .video-wrapper video{
+    position:absolute; inset:0; width:100%; height:100%; border:0;
+  }
+  .video-fallback{font-size:13.5px;}
+  .video-fallback a{color:var(--accent);}
+  .post-caption{font-size:13.5px; margin-top:10px; line-height:1.5;}
+  .empty-state{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:40px 20px;
+    font-size:14px;
+  }
+
+  /* --- teachers screen --- */
+  .teacher-card .teacher-name{font-weight:600; font-size:15px; margin-bottom:4px;}
+  .teacher-card .teacher-link{font-size:13px;}
+  .teacher-card .teacher-link a{color:var(--accent);}
+  .teacher-card .teacher-actions{margin-top:12px; display:flex; gap:8px;}
+  .complaint-form{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px solid var(--line);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo" id="logo-music" role="button" tabindex="0" title="Միացնել / անջատել երաժշտությունը">Մարատ Սարգսյանի արվեստանոց <span id="music-icon" aria-hidden="true"></span></span>
+  <span class="mode-badge hidden" id="mode-badge">Ավագանու ռեժիմ</span>
+</header>
+
+<main id="main" class="center">
+
+  <!-- SCREEN 1: home choice -->
+  <section class="screen" id="screen-home">
+    <h1 class="title">Ընտրիր բաժինը</h1>
+    <p class="subtitle">Մուտք գործիր ըստ քո դերի</p>
+    <div class="choices">
+      <button class="choice-card" id="btn-seniors">
+        <div class="icon">🔑</div>
+        <div class="label">Ավագանի</div>
+      </button>
+      <button class="choice-card" id="btn-students">
+        <div class="icon">🎬</div>
+        <div class="label">Ուսանողներ</div>
+      </button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: pin entry -->
+  <section class="screen hidden" id="screen-pin">
+    <div class="pin-box">
+      <h1 class="title">Ավագանու մուտք</h1>
+      <p class="subtitle">Մուտքագրիր 4-նիշանոց կոդը</p>
+      <div class="pin-inputs">
+        <input type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]*">
+        <input type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]*">
+        <input type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]*">
+        <input type="tel" inputmode="numeric" maxlength="1" pattern="[0-9]*">
+      </div>
+      <p class="pin-error" id="pin-error"></p>
+      <button class="btn btn-primary" id="btn-pin-submit">Մուտք</button>
+      <div style="margin-top:10px;">
+        <button class="btn btn-link" id="btn-pin-back">Հետ</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: admin dashboard, split in two -->
+  <section class="screen wide hidden" id="screen-admin">
+    <div class="dash-head">
+      <h1 class="title" style="text-align:left; margin:0;">Ավագանու վահանակ</h1>
+      <button class="btn btn-link" id="btn-admin-logout">Ելք</button>
+    </div>
+
+    <div class="admin-block">
+      <div class="section-subhead">
+        <h2>Մեր նյութերը</h2>
+        <p>Ավագանու սեփական բաժինները</p>
+      </div>
+      <div class="menu-grid" id="admin-own-grid"></div>
+    </div>
+
+    <div class="admin-block">
+      <div class="section-subhead">
+        <h2>Ուսանողների բաժինների կառավարում</h2>
+        <p>Ընտրիր ենթաբաժինը՝ նյութ հրապարակելու համար</p>
+      </div>
+      <div class="menu-grid" id="admin-manage-grid"></div>
+    </div>
+  </section>
+
+  <!-- SCREEN 4: students dashboard -->
+  <section class="screen wide hidden" id="screen-students">
+    <div class="dash-head">
+      <h1 class="title" style="text-align:left; margin:0;">Ուսանողների բաժին</h1>
+      <button class="btn btn-link" id="btn-students-back">Հետ</button>
+    </div>
+    <div class="menu-grid" id="students-menu-grid"></div>
+  </section>
+
+  <!-- SCREEN 5: generic content section, shared by every plain menu item -->
+  <section class="screen wide hidden" id="screen-content">
+    <div class="content-toolbar">
+      <button class="btn btn-link back" id="btn-content-back">← Հետ</button>
+    </div>
+    <div class="content-heading" style="margin-bottom:18px;">
+      <h1 id="content-title"></h1>
+      <p id="content-note"></p>
+    </div>
+
+    <div class="add-post-panel hidden" id="add-post-panel">
+      <h2>Ավելացնել նյութ</h2>
+      <div class="type-tabs">
+        <button class="type-tab active" data-type="text">Տեքստ</button>
+        <button class="type-tab" data-type="image">Նկար</button>
+        <button class="type-tab" data-type="video">Տեսանյութ</button>
+      </div>
+
+      <div id="fields-text">
+        <div class="field">
+          <label for="input-text">Տեքստ</label>
+          <textarea id="input-text" placeholder="Գրիր հաղորդագրությունը..."></textarea>
+        </div>
+      </div>
+
+      <div id="fields-image" class="hidden">
+        <div class="field">
+          <label for="input-image-url">Նկարի հղում (URL)</label>
+          <input type="url" id="input-image-url" placeholder="https://...">
+          <div class="hint">Նկարը չի պահվում կայքում, միայն հղումը՝ ինտերնետից։</div>
+        </div>
+        <div class="field">
+          <label for="input-image-caption">Ստորագրություն (ոչ պարտադիր)</label>
+          <input type="text" id="input-image-caption" placeholder="Ստորագրություն...">
+        </div>
+      </div>
+
+      <div id="fields-video" class="hidden">
+        <div class="field">
+          <label for="input-video-url">Տեսանյութի հղում (YouTube, Vimeo կամ .mp4)</label>
+          <input type="url" id="input-video-url" placeholder="https://www.youtube.com/watch?v=...">
+          <div class="hint">Տեսանյութը կկցվի ուղղակիորեն էջում, առանց YouTube անցնելու։</div>
+        </div>
+        <div class="field">
+          <label for="input-video-caption">Ստորագրություն (ոչ պարտադիր)</label>
+          <input type="text" id="input-video-caption" placeholder="Ստորագրություն...">
+        </div>
+      </div>
+
+      <p class="form-error" id="form-error"></p>
+      <button class="btn btn-primary btn-sm" id="btn-add-post">Հրապարակել</button>
+    </div>
+
+    <div class="post-list" id="post-list"></div>
+  </section>
+
+  <!-- SCREEN 6: teachers (special structure: name + link + complaint) -->
+  <section class="screen wide hidden" id="screen-teachers">
+    <div class="content-toolbar">
+      <button class="btn btn-link back" id="btn-teachers-back">← Հետ</button>
+    </div>
+    <div class="content-heading" style="margin-bottom:18px;">
+      <h1>Դասախոսներ</h1>
+      <p>Դասավանդողների ցուցակ և առարկայական բնութագրերը</p>
+    </div>
+
+    <div class="add-post-panel hidden" id="add-teacher-panel">
+      <h2>Ավելացնել դասախոս</h2>
+      <div class="field">
+        <label for="input-teacher-name">Անուն Ազգանուն</label>
+        <input type="text" id="input-teacher-name" placeholder="օր.՝ Անի Հակոբյան">
+      </div>
+      <div class="field">
+        <label for="input-teacher-link">Առարկայական բնութագրի հղում (URL)</label>
+        <input type="url" id="input-teacher-link" placeholder="https://...">
+      </div>
+      <p class="form-error" id="teacher-form-error"></p>
+      <button class="btn btn-primary btn-sm" id="btn-add-teacher">Ավելացնել</button>
+    </div>
+
+    <div class="post-list" id="teacher-list"></div>
+  </section>
+
+</main>
+
+<script>
+  /* ============================================================
+     ԿԱՐԳԱՎՈՐՈՒՄ — փոխիր միայն այս մասը deploy-ից հետո
+     ============================================================ */
+  const CONFIG = {
+    // Google Apps Script Web App-ի URL-ը, որը կստանաս deploy անելուց հետո
+    // (տես ուղեցույցը README.md-ում կամ զրույցի վերջում)
+    WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbye2-rcwyHvf5uojk6r5VBRQVqBxLG_bmsK2pYY5mLcR4tu3a7Hpep6nTQSNVjqHq1I/exec'
+  };
+
+  /* ---------- section definitions ---------- */
+  // These are ready-made reference links for the admins themselves — not a
+  // place to post new material. Clicking one just opens the linked file.
+  // Replace each url below with the real link to the corresponding document.
+  const ADMIN_OWN_SECTIONS = [
+    { id:'assignments',      label:'Հանձնարարություններ',       note:'Ուսանողներին տրված առաջադրանքներ', url:'https://example.com/assignments.txt' },
+    { id:'fundraising',      label:'Դրամահավաքներ',             note:'Ընթացիկ ֆինանսավորումներ', url:'https://example.com/fundraising.txt' },
+    { id:'announcements',    label:'Հայտարարություններ',        note:'Ընդհանուր ծանուցումներ', url:'https://example.com/announcements.txt' },
+    { id:'library-users',    label:'Գրադարան — օգտվողներ',      note:'Ով ինչ ունի իր մոտ', url:'https://example.com/library-users.txt' },
+    { id:'schedule-admin',   label:'Դասացուցակ',                note:'Շաբաթվա ժամանակացույց', url:'https://example.com/schedule.txt' },
+    { id:'videos-admin',     label:'Տեսանյութեր',               note:'Ուսանողական աշխատանքներ', url:'https://example.com/videos.txt' },
+    { id:'director-library', label:'Ռեժիսորական գրադարան',      note:'Ֆիլմեր և գրքեր', url:'https://example.com/director-library.txt' },
+    { id:'student-list',     label:'Ուսանողների ցուցակ',        note:'Դասարանի կազմը', url:'https://example.com/student-list.txt' },
+  ];
+
+  // Complaints are actually generated by the site (students submit them),
+  // so this one stays as a real, read-only content list rather than a link.
+  const ADMIN_COMPLAINTS_SECTION = { id:'teacher-complaints', label:'Դասախոսների բողոքներ', note:'Ստացված անանուն բողոքները' };
+
+  // These are the student-facing subsections. They double as the list the
+  // admin panel uses to pick which student subsection to post into.
+  const STUDENT_SECTIONS = [
+    { id:'schedule-student', label:'Դասացուցակ/ժամացուցակ',     note:'Շաբաթվա ժամանակացույց' },
+    { id:'teachers',         label:'Դասախոսներ',                note:'Դասավանդողների ցուցակ', special:'teachers' },
+    { id:'directing-tasks',  label:'Ռեժիսուրա առաջադրանքներ',   note:'Ընթացիկ հանձնարարություններ' },
+    { id:'martin-videos',    label:'Տուտորիալներ',              note:'Ուսուցողական տեսանյութեր' },
+  ];
+
+  const ADMIN_PIN = "2026"; // ֆիքսված կոդ. փոխիր այստեղ ԵՎ Apps Script-ի կոդում (ADMIN_PIN)
+
+  /* ============================================================
+     API SHELL — Google Sheets backend-ի հետ կապվող ֆունկցիաները
+     JSONP-ով (<script> դինամիկ ներմուծում), ոչ թե fetch()-ով.
+     Սա աշխատում է նաև file://-ից բացած էջում, քանի որ <script>
+     բեռնումը browser-ը երբեք չի արգելափակում origin-ի պատճառով,
+     ի տարբերություն fetch()-ի (որը file://-ից հաճախ ձախողվում է)։
+     ============================================================ */
+  function apiConfigured(){
+    return CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== 'PASTE_YOUR_WEB_APP_URL_HERE';
+  }
+
+  function apiRequest(params){
+    return new Promise((resolve) => {
+      if (!apiConfigured()){ resolve({ ok:false, error:'not-configured' }); return; }
+
+      const cbName = 'gcb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      const script = document.createElement('script');
+      const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+
+      let settled = false;
+      const cleanup = () => {
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        clearTimeout(timeoutId);
+      };
+
+      window[cbName] = (data) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(data);
+      };
+      script.onerror = () => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve({ ok:false, error:'network' });
+      };
+      // եթե 30 վրկ-ում պատասխան չգա (օր.՝ սխալ URL), չկախվենք ընդմիշտ
+      // (Apps Script-ի առաջին կանչերը "cold start"-ի պատճառով կարող են
+      // տևել մի քանի վայրկյան, ուստի timeout-ը դիտավորյալ առատ է)
+      const timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve({ ok:false, error:'timeout' });
+      }, 30000);
+
+      script.src = CONFIG.WEB_APP_URL + '?' + qs;
+      document.head.appendChild(script);
+    });
+  }
+
+  function configWarning(){
+    return `<div class="empty-state">⚠️ Google Sheets-ի կապը դեռ կարգավորված չէ։<br>
+      Բացիր site-ի HTML ֆայլը, գտիր <code>CONFIG.WEB_APP_URL</code> և տեղադրիր
+      քո Apps Script-ի Web App URL-ը։</div>`;
+  }
+
+  /* ---------- navigation state ---------- */
+  let isAdmin = false;          // true only after a correct PIN entry this session
+  let currentSectionId = null;
+  let currentBack = 'home';     // which dashboard to return to from the content screen
+  let teachersBack = 'students';
+
+  const screens = {
+    home: document.getElementById('screen-home'),
+    pin: document.getElementById('screen-pin'),
+    admin: document.getElementById('screen-admin'),
+    students: document.getElementById('screen-students'),
+    content: document.getElementById('screen-content'),
+    teachers: document.getElementById('screen-teachers'),
+  };
+  const mainEl = document.getElementById('main');
+  const modeBadge = document.getElementById('mode-badge');
+
+  function show(name){
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[name].classList.remove('hidden');
+    mainEl.classList.toggle('center', name === 'home' || name === 'pin');
+  }
+
+  /* ---------- build menus ---------- */
+  function makeMenuButton(def, onClick){
+    const btn = document.createElement('button');
+    btn.className = 'menu-item';
+    btn.innerHTML = `<div class="label">${def.label}</div><div class="note">${def.note}</div>`;
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  function makeLinkItem(def){
+    const a = document.createElement('a');
+    a.className = 'menu-item';
+    a.href = def.url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.innerHTML = `<div class="label">${def.label}</div><div class="note">${def.note}</div>`;
+    return a;
+  }
+
+  function openFromDefinition(def, backTo){
+    if (def.special === 'teachers'){
+      openTeachers(backTo);
+    } else {
+      openSection(def.id, backTo);
+    }
+  }
+
+  const adminOwnGrid = document.getElementById('admin-own-grid');
+  ADMIN_OWN_SECTIONS.forEach(def => {
+    adminOwnGrid.appendChild(makeLinkItem(def));
+  });
+  adminOwnGrid.appendChild(makeMenuButton(ADMIN_COMPLAINTS_SECTION, () => openSection(ADMIN_COMPLAINTS_SECTION.id, 'admin')));
+
+  const adminManageGrid = document.getElementById('admin-manage-grid');
+  STUDENT_SECTIONS.forEach(def => {
+    adminManageGrid.appendChild(makeMenuButton(def, () => openFromDefinition(def, 'admin')));
+  });
+
+  const studentsGrid = document.getElementById('students-menu-grid');
+  STUDENT_SECTIONS.forEach(def => {
+    studentsGrid.appendChild(makeMenuButton(def, () => openFromDefinition(def, 'students')));
+  });
+
+  /* ---------- pin flow ---------- */
+  const pinInputs = Array.from(document.querySelectorAll('.pin-inputs input'));
+  const pinError = document.getElementById('pin-error');
+
+  function resetPin(){
+    pinInputs.forEach(i => i.value = '');
+    pinError.textContent = '';
+  }
+
+  document.getElementById('btn-seniors').addEventListener('click', () => {
+    resetPin();
+    show('pin');
+    pinInputs[0].focus();
+  });
+
+  document.getElementById('btn-students').addEventListener('click', () => {
+    isAdmin = false;
+    modeBadge.classList.add('hidden');
+    show('students');
+  });
+
+  document.getElementById('btn-students-back').addEventListener('click', () => show('home'));
+  document.getElementById('btn-pin-back').addEventListener('click', () => show('home'));
+  document.getElementById('btn-admin-logout').addEventListener('click', () => {
+    isAdmin = false;
+    modeBadge.classList.add('hidden');
+    show('home');
+  });
+
+  pinInputs.forEach((input, idx) => {
+    input.addEventListener('input', () => {
+      input.value = input.value.replace(/[^0-9]/g, '').slice(0,1);
+      if (input.value && idx < pinInputs.length - 1){
+        pinInputs[idx+1].focus();
+      }
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !input.value && idx > 0){
+        pinInputs[idx-1].focus();
+      }
+      if (e.key === 'Enter'){
+        checkPin();
+      }
+    });
+  });
+
+  function checkPin(){
+    const code = pinInputs.map(i => i.value).join('');
+    if (code.length < 4){
+      pinError.textContent = 'Մուտքագրիր 4 նիշ։';
+      return;
+    }
+    if (code === ADMIN_PIN){
+      pinError.textContent = '';
+      isAdmin = true;
+      modeBadge.classList.remove('hidden');
+      show('admin');
+    } else {
+      pinError.textContent = 'Սխալ կոդ։ Փորձիր կրկին։';
+      resetPin();
+      pinInputs[0].focus();
+    }
+  }
+  document.getElementById('btn-pin-submit').addEventListener('click', checkPin);
+
+  /* ---------- shared helpers ---------- */
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(str){ return escapeHtml(str); }
+
+  function formatDate(iso){
+    try{
+      return new Date(iso).toLocaleDateString('hy-AM', { year:'numeric', month:'short', day:'numeric' });
+    }catch(e){ return ''; }
+  }
+
+  function getYouTubeId(url){
+    const patterns = [
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/watch\?[^#]*v=([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const p of patterns){
+      const m = url.match(p);
+      if (m) return m[1];
+    }
+    return null;
+  }
+  function getVimeoId(url){
+    const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    return m ? m[1] : null;
+  }
+  function isDirectVideoFile(url){
+    return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+  }
+  function renderVideo(url){
+    const yt = getYouTubeId(url);
+    if (yt){
+      return `<div class="video-wrapper"><iframe src="https://www.youtube.com/embed/${yt}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+    }
+    const vm = getVimeoId(url);
+    if (vm){
+      return `<div class="video-wrapper"><iframe src="https://player.vimeo.com/video/${vm}" title="Vimeo video" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+    }
+    if (isDirectVideoFile(url)){
+      return `<div class="video-wrapper"><video controls src="${escapeAttr(url)}"></video></div>`;
+    }
+    return `<div class="video-fallback">Չհաջողվեց ճանաչել տեսանյութի տեսակը․ <a href="${escapeAttr(url)}" target="_blank" rel="noopener">բացել հղումը</a></div>`;
+  }
+
+  /* ---------- generic content section ---------- */
+  const contentTitle = document.getElementById('content-title');
+  const contentNote = document.getElementById('content-note');
+  const addPostPanel = document.getElementById('add-post-panel');
+  const postList = document.getElementById('post-list');
+  const formError = document.getElementById('form-error');
+
+  document.getElementById('btn-content-back').addEventListener('click', () => show(currentBack));
+
+  async function openSection(sectionId, backTo){
+    currentBack = backTo;
+    const def = STUDENT_SECTIONS.find(s => s.id === sectionId) ||
+      (sectionId === ADMIN_COMPLAINTS_SECTION.id ? ADMIN_COMPLAINTS_SECTION : null);
+    currentSectionId = sectionId;
+    contentTitle.textContent = def.label;
+    contentNote.textContent = def.note;
+    addPostPanel.classList.toggle('hidden', !isAdmin || sectionId === ADMIN_COMPLAINTS_SECTION.id);
+    resetForm();
+    show('content');
+    await renderPosts();
+  }
+
+  /* posts are now fetched from / written to the Google Sheets backend
+     through the Apps Script Web App, instead of localStorage */
+  async function getPosts(sectionId){
+    const data = await apiRequest({ action:'getPosts', section: sectionId });
+    if (!data.ok) return { ok:false, posts:[] };
+    return { ok:true, posts:data.posts || [] };
+  }
+
+  async function renderPosts(){
+    postList.innerHTML = '<div class="empty-state">Բեռնվում է…</div>';
+    const { ok, posts: all } = await getPosts(currentSectionId);
+    if (!ok){
+      postList.innerHTML = apiConfigured()
+        ? '<div class="empty-state">Չհաջողվեց բեռնել տվյալները։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։</div>'
+        : configWarning();
+      return;
+    }
+    const posts = all.slice().reverse(); // newest first
+    postList.innerHTML = '';
+    if (posts.length === 0){
+      postList.innerHTML = '<div class="empty-state">Այստեղ դեռ նյութ չկա։</div>';
+      return;
+    }
+    posts.forEach((post) => {
+      const card = document.createElement('div');
+      card.className = 'post-card';
+
+      let body = '';
+      if (post.type === 'text'){
+        body = `<div class="post-text">${escapeHtml(post.text || '')}</div>`;
+      } else if (post.type === 'image'){
+        body = `<img src="${escapeAttr(post.url)}" alt="${escapeAttr(post.caption || '')}" loading="lazy">`;
+        if (post.caption) body += `<div class="post-caption">${escapeHtml(post.caption)}</div>`;
+      } else if (post.type === 'video'){
+        body = renderVideo(post.url);
+        if (post.caption) body += `<div class="post-caption">${escapeHtml(post.caption)}</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="post-meta">
+          <span>${formatDate(post.date)}</span>
+          ${isAdmin ? `<button class="btn btn-danger btn-sm" data-id="${escapeAttr(post.id)}">Ջնջել</button>` : ''}
+        </div>
+        ${body}
+      `;
+      postList.appendChild(card);
+    });
+
+    if (isAdmin){
+      postList.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.textContent = '…';
+          await apiRequest({ action:'deletePost', sectionId: currentSectionId, id: btn.dataset.id, pin: ADMIN_PIN });
+          renderPosts();
+        });
+      });
+    }
+  }
+
+  /* --- add-post form --- */
+  let activeType = 'text';
+  const typeTabs = Array.from(document.querySelectorAll('.type-tab'));
+  const fieldGroups = {
+    text: document.getElementById('fields-text'),
+    image: document.getElementById('fields-image'),
+    video: document.getElementById('fields-video'),
+  };
+  typeTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeType = tab.dataset.type;
+      typeTabs.forEach(t => t.classList.toggle('active', t === tab));
+      Object.entries(fieldGroups).forEach(([type, el]) => el.classList.toggle('hidden', type !== activeType));
+      formError.textContent = '';
+    });
+  });
+
+  function resetForm(){
+    activeType = 'text';
+    typeTabs.forEach(t => t.classList.toggle('active', t.dataset.type === 'text'));
+    Object.entries(fieldGroups).forEach(([type, el]) => el.classList.toggle('hidden', type !== 'text'));
+    document.getElementById('input-text').value = '';
+    document.getElementById('input-image-url').value = '';
+    document.getElementById('input-image-caption').value = '';
+    document.getElementById('input-video-url').value = '';
+    document.getElementById('input-video-caption').value = '';
+    formError.textContent = '';
+  }
+
+  document.getElementById('btn-add-post').addEventListener('click', async () => {
+    formError.textContent = '';
+    let post = null;
+
+    if (activeType === 'text'){
+      const text = document.getElementById('input-text').value.trim();
+      if (!text){ formError.textContent = 'Գրիր տեքստը։'; return; }
+      post = { type:'text', text, date: new Date().toISOString() };
+    } else if (activeType === 'image'){
+      const url = document.getElementById('input-image-url').value.trim();
+      if (!url){ formError.textContent = 'Մուտքագրիր նկարի հղումը։'; return; }
+      const caption = document.getElementById('input-image-caption').value.trim();
+      post = { type:'image', url, caption, date: new Date().toISOString() };
+    } else if (activeType === 'video'){
+      const url = document.getElementById('input-video-url').value.trim();
+      if (!url){ formError.textContent = 'Մուտքագրիր տեսանյութի հղումը։'; return; }
+      const caption = document.getElementById('input-video-caption').value.trim();
+      post = { type:'video', url, caption, date: new Date().toISOString() };
+    }
+
+    const btn = document.getElementById('btn-add-post');
+    const originalBtnText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Հրապարակվում է…';
+    const res = await apiRequest({
+      action:'addPost',
+      sectionId: currentSectionId,
+      type: post.type,
+      text: post.text || '',
+      url: post.url || '',
+      caption: post.caption || '',
+      date: post.date,
+      pin: ADMIN_PIN
+    });
+    btn.disabled = false;
+    btn.textContent = originalBtnText;
+    if (!res.ok){
+      if (res.error === 'timeout'){
+        formError.textContent = 'Պատասխանը ուշացավ, բայց հնարավոր է նյութն արդեն հրապարակվել է Sheet-ում. ստուգիր ցուցակը ներքևում, կամ բացիր բաժինը կրկին։';
+      } else {
+        formError.textContent = apiConfigured()
+          ? 'Չհաջողվեց հրապարակել։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։'
+          : 'Google Sheets-ի կապը կարգավորված չէ (տես CONFIG.WEB_APP_URL)։';
+      }
+      renderPosts(); // թարմացնենք ցուցակը, գուցե իրականում հաջողվել է
+      return;
+    }
+    resetForm();
+    renderPosts();
+  });
+
+  /* ---------- teachers screen ---------- */
+  const addTeacherPanel = document.getElementById('add-teacher-panel');
+  const teacherList = document.getElementById('teacher-list');
+  const teacherFormError = document.getElementById('teacher-form-error');
+
+  document.getElementById('btn-teachers-back').addEventListener('click', () => show(teachersBack));
+
+  async function getTeachers(){
+    const data = await apiRequest({ action:'getTeachers' });
+    if (!data.ok) return { ok:false, teachers:[] };
+    return { ok:true, teachers:data.teachers || [] };
+  }
+
+  async function openTeachers(backTo){
+    teachersBack = backTo;
+    addTeacherPanel.classList.toggle('hidden', !isAdmin);
+    teacherFormError.textContent = '';
+    document.getElementById('input-teacher-name').value = '';
+    document.getElementById('input-teacher-link').value = '';
+    show('teachers');
+    await renderTeachers();
+  }
+
+  async function renderTeachers(){
+    teacherList.innerHTML = '<div class="empty-state">Բեռնվում է…</div>';
+    const { ok, teachers } = await getTeachers();
+    if (!ok){
+      teacherList.innerHTML = apiConfigured()
+        ? '<div class="empty-state">Չհաջողվեց բեռնել տվյալները։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։</div>'
+        : configWarning();
+      return;
+    }
+    teacherList.innerHTML = '';
+    if (teachers.length === 0){
+      teacherList.innerHTML = '<div class="empty-state">Դասախոսներ դեռ ավելացված չեն։</div>';
+      return;
+    }
+    teachers.forEach(t => {
+      const card = document.createElement('div');
+      card.className = 'post-card teacher-card';
+      card.innerHTML = `
+        <div class="teacher-name">${escapeHtml(t.name)}</div>
+        ${t.subjectLink ? `<div class="teacher-link"><a href="${escapeAttr(t.subjectLink)}" target="_blank" rel="noopener">Առարկայի բնութագիրը</a></div>` : ''}
+        <div class="teacher-actions">
+          ${isAdmin
+            ? `<button class="btn btn-danger btn-sm" data-delete-id="${escapeAttr(t.id)}">Ջնջել</button>`
+            : `<button class="btn btn-secondary btn-sm" data-complain-id="${escapeAttr(t.id)}">Բողոքել</button>`
+          }
+        </div>
+        ${!isAdmin ? `
+        <div class="complaint-form hidden" data-complaint-form-id="${escapeAttr(t.id)}">
+          <div class="field">
+            <label>Ձեր բողոքը (անանուն)</label>
+            <textarea placeholder="Նկարագրիր խնդիրը..."></textarea>
+          </div>
+          <p class="form-error"></p>
+          <p class="form-success hidden">Բողոքն ուղարկվեց անանուն կերպով։</p>
+          <button class="btn btn-primary btn-sm" data-send-complaint-id="${escapeAttr(t.id)}">Ուղարկել</button>
+        </div>` : ''}
+      `;
+      teacherList.appendChild(card);
+    });
+
+    if (isAdmin){
+      teacherList.querySelectorAll('button[data-delete-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          await apiRequest({ action:'deleteTeacher', id: btn.dataset.deleteId, pin: ADMIN_PIN });
+          renderTeachers();
+        });
+      });
+    } else {
+      teacherList.querySelectorAll('button[data-complain-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const form = teacherList.querySelector(`[data-complaint-form-id="${btn.dataset.complainId}"]`);
+          if (form) form.classList.toggle('hidden');
+        });
+      });
+      teacherList.querySelectorAll('button[data-send-complaint-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const teacherId = btn.dataset.sendComplaintId;
+          const form = teacherList.querySelector(`[data-complaint-form-id="${teacherId}"]`);
+          const textarea = form.querySelector('textarea');
+          const errorEl = form.querySelector('.form-error');
+          const successEl = form.querySelector('.form-success');
+          const text = textarea.value.trim();
+          if (!text){
+            errorEl.textContent = 'Գրիր բողոքի տեքստը։';
+            return;
+          }
+          const currentTeachers = (await getTeachers()).teachers;
+          const teacher = currentTeachers.find(x => x.id === teacherId);
+          const teacherName = teacher ? teacher.name : 'Անհայտ դասախոս';
+          btn.disabled = true;
+          const res = await apiRequest({
+            action:'addComplaint',
+            text: `Դասախոս՝ ${teacherName}\n\n${text}`
+          });
+          if (!res.ok){
+            errorEl.textContent = 'Չհաջողվեց ուղարկել։ Փորձիր կրկին։';
+            btn.disabled = false;
+            return;
+          }
+          errorEl.textContent = '';
+          textarea.value = '';
+          textarea.disabled = true;
+          successEl.classList.remove('hidden');
+        });
+      });
+    }
+  }
+
+  document.getElementById('btn-add-teacher').addEventListener('click', async () => {
+    teacherFormError.textContent = '';
+    const name = document.getElementById('input-teacher-name').value.trim();
+    const link = document.getElementById('input-teacher-link').value.trim();
+    if (!name){
+      teacherFormError.textContent = 'Գրիր դասախոսի անունը։';
+      return;
+    }
+    const btn = document.getElementById('btn-add-teacher');
+    btn.disabled = true;
+    const res = await apiRequest({ action:'addTeacher', name, subjectLink: link, pin: ADMIN_PIN });
+    btn.disabled = false;
+    if (!res.ok){
+      teacherFormError.textContent = apiConfigured()
+        ? 'Չհաջողվեց ավելացնել։ Փորձիր կրկին։'
+        : 'Google Sheets-ի կապը կարգավորված չէ (տես CONFIG.WEB_APP_URL)։';
+      return;
+    }
+    document.getElementById('input-teacher-name').value = '';
+    document.getElementById('input-teacher-link').value = '';
+    renderTeachers();
+  });
+</script>
+<audio id="bg-music" src="music.mp3" preload="auto"></audio>
+<script>
+/* Լոգոյի (Մարատ Սարգսյանի արվեստանոց) վրա սեղմելիս երաժշտությունը միանում/անջատվում է։
+   Երաժշտական ֆայլը պետք է անվանվի music.mp3 և դրված լինի այս HTML-ի կողքին։ */
+(function(){
+  const audio = document.getElementById('bg-music');
+  const logo  = document.getElementById('logo-music');
+  const icon  = document.getElementById('music-icon');
+  audio.volume = 0.5;
+  function refresh(){ icon.textContent = audio.paused ? '🔇' : '🔊'; }
+  function toggle(){
+    if (audio.paused){ audio.play().then(refresh).catch(refresh); }
+    else { audio.pause(); refresh(); }
+  }
+  // երաժշտությունն ավարտվելիս ավտոմատ կանգնում է և հետ է գալիս սկզբին
+  audio.addEventListener('ended', () => { audio.currentTime = 0; refresh(); });
+  logo.addEventListener('click', toggle);
+  logo.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); }
+  });
+  refresh();
+})();
+</script>
+</body>
+</html>

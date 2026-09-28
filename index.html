@@ -382,6 +382,30 @@
     padding-top:12px;
     border-top:1px solid var(--line);
   }
+
+  /* --- section management --- */
+  .section-subhead.with-action{display:flex; align-items:flex-end; justify-content:space-between; gap:12px;}
+  .menu-wrap{position:relative;}
+  .menu-wrap .menu-item{padding-bottom:46px; height:100%;}
+  .menu-tools{position:absolute; bottom:10px; right:10px; display:flex; gap:4px;}
+  .menu-tool{
+    background:var(--bg); border:1px solid var(--line); border-radius:6px;
+    width:24px; height:24px; cursor:pointer; font-size:11px; line-height:1; color:var(--ink); padding:0;
+  }
+  .menu-tool:hover{border-color:var(--accent);}
+  .menu-tool.danger:hover{border-color:var(--danger);}
+  .menu-grid .empty-state{grid-column:1 / -1;}
+
+  .more-wrap{text-align:center; padding:6px 0;}
+
+  /* --- background-save indicator --- */
+  .sync-badge{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(72px + env(safe-area-inset-bottom, 0px));
+    z-index:55; background:var(--panel); color:var(--ink-soft);
+    border:1px solid var(--line); padding:6px 12px; border-radius:999px; font-size:12.5px;
+  }
+  .sync-badge.hidden{display:none;}
 </style>
 </head>
 <body>
@@ -439,17 +463,23 @@
     </div>
 
     <div class="admin-block">
-      <div class="section-subhead">
-        <h2>Մեր նյութերը</h2>
-        <p>Ավագանու սեփական բաժինները</p>
+      <div class="section-subhead with-action">
+        <div>
+          <h2>Մեր նյութերը</h2>
+          <p>Ավագանու սեփական բաժինները՝ ✏️ փոխել, 🗑 ջնջել</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-add-own-section">＋ Նոր բաժին</button>
       </div>
       <div class="menu-grid" id="admin-own-grid"></div>
     </div>
 
     <div class="admin-block">
-      <div class="section-subhead">
-        <h2>Ուսանողների բաժինների կառավարում</h2>
-        <p>Ընտրիր ենթաբաժինը՝ նյութերը դիտելու, փոխելու կամ ջնջելու համար</p>
+      <div class="section-subhead with-action">
+        <div>
+          <h2>Ուսանողների բաժինների կառավարում</h2>
+          <p>Ընտրիր ենթաբաժինը՝ նյութերը դիտելու համար, կամ ✏️ փոխիր / 🗑 ջնջիր բաժինը</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="btn-add-student-section">＋ Նոր բաժին</button>
       </div>
       <div class="menu-grid" id="admin-manage-grid"></div>
     </div>
@@ -558,6 +588,26 @@
     </div>
   </div>
 </div>
+<!-- Create / edit section modal -->
+<div class="modal-backdrop hidden" id="section-modal" role="dialog" aria-modal="true" aria-labelledby="section-modal-title">
+  <div class="modal">
+    <h2 id="section-modal-title">Նոր բաժին</h2>
+    <div class="field">
+      <label for="input-section-label">Բաժնի անվանում</label>
+      <input type="text" id="input-section-label" maxlength="60" placeholder="օր.՝ Հանձնարարություններ">
+    </div>
+    <div class="field">
+      <label for="input-section-note">Կարճ նկարագրություն (ոչ պարտադիր)</label>
+      <input type="text" id="input-section-note" maxlength="120" placeholder="օր.՝ Ուսանողներին տրված առաջադրանքներ">
+    </div>
+    <p class="form-error" id="section-form-error"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-section-cancel">Չեղարկել</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-section-submit">Ստեղծել</button>
+    </div>
+  </div>
+</div>
+<div class="sync-badge hidden" id="sync-badge" role="status">⏳ Պահպանվում է Google Sheets-ում…</div>
 <div class="toast hidden" id="toast" role="status"></div>
 
 <script>
@@ -565,47 +615,48 @@
      ԿԱՐԳԱՎՈՐՈՒՄ — փոխիր միայն այս մասը deploy-ից հետո
      ============================================================ */
   const CONFIG = {
-    // Google Apps Script Web App-ի URL-ը, որը կստանաս deploy անելուց հետո
-    // (տես ուղեցույցը README.md-ում կամ զրույցի վերջում)
+    // Google Apps Script Web App-ի URL-ը (deploy-ից հետո)
     WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbye2-rcwyHvf5uojk6r5VBRQVqBxLG_bmsK2pYY5mLcR4tu3a7Hpep6nTQSNVjqHq1I/exec'
   };
 
-  /* ---------- section definitions ---------- */
-  // Ավագանու սեփական բաժինները ("Մեր նյութերը"). Աշխատում են ճիշտ ինչպես
-  // ուսանողական ենթաբաժինները՝ նյութեր ստեղծվում, փոխվում և ջնջվում են,
-  // բայց երևում են ՄԻԱՅՆ ավագանուն (ուսանողների մենյուում չկան)։
-  const ADMIN_OWN_SECTIONS = [
-    { id:'assignments',      label:'Հանձնարարություններ',       note:'Ուսանողներին տրված առաջադրանքներ' },
-    { id:'fundraising',      label:'Դրամահավաքներ',             note:'Ընթացիկ ֆինանսավորումներ' },
-    { id:'announcements',    label:'Հայտարարություններ',        note:'Ընդհանուր ծանուցումներ' },
-    { id:'library-users',    label:'Գրադարան — օգտվողներ',      note:'Ով ինչ ունի իր մոտ' },
-    { id:'schedule-admin',   label:'Դասացուցակ',                note:'Շաբաթվա ժամանակացույց' },
-    { id:'videos-admin',     label:'Տեսանյութեր',               note:'Ուսանողական աշխատանքներ' },
-    { id:'director-library', label:'Ռեժիսորական գրադարան',      note:'Ֆիլմեր և գրքեր' },
-    { id:'student-list',     label:'Ուսանողների ցուցակ',        note:'Դասարանի կազմը' },
-  ];
-
-  // Complaints are actually generated by the site (students submit them),
-  // so this one stays as a real, read-only content list rather than a link.
-  const ADMIN_COMPLAINTS_SECTION = { id:'teacher-complaints', label:'Դասախոսների բողոքներ', note:'Ստացված անանուն բողոքները' };
-
-  // These are the student-facing subsections. They double as the list the
-  // admin panel uses to pick which student subsection to post into.
-  const STUDENT_SECTIONS = [
-    { id:'schedule-student', label:'Դասացուցակ/ժամացուցակ',     note:'Շաբաթվա ժամանակացույց' },
-    { id:'teachers',         label:'Դասախոսներ',                note:'Դասավանդողների ցուցակ', special:'teachers' },
-    { id:'directing-tasks',  label:'Ռեժիսուրա առաջադրանքներ',   note:'Ընթացիկ հանձնարարություններ' },
-    { id:'martin-videos',    label:'Տուտորիալներ',              note:'Ուսուցողական տեսանյութեր' },
-  ];
-
   const ADMIN_PIN = "2026"; // ֆիքսված կոդ. փոխիր այստեղ ԵՎ Apps Script-ի կոդում (ADMIN_PIN)
 
+  /* ---------- բաժիններ ----------
+     Բաժինները հիմա պահվում են Google Sheet-ի «Sections» թերթում և կառավարվում են
+     ավագանու վահանակից (ստեղծել / փոխել / ջնջել). ստորև սկզբնական ցուցակն է՝
+     ցույց է տրվում այնքան ժամանակ, մինչև սերվերից պատասխան գա։
+     group: 'own' = Մեր նյութերը (միայն ավագանի), 'student' = Ուսանողների բաժիններ */
+  const DEFAULT_SECTIONS = [
+    { id:'assignments',      group:'own', label:'Հանձնարարություններ',       note:'Ուսանողներին տրված առաջադրանքներ' },
+    { id:'fundraising',      group:'own', label:'Դրամահավաքներ',             note:'Ընթացիկ ֆինանսավորումներ' },
+    { id:'announcements',    group:'own', label:'Հայտարարություններ',        note:'Ընդհանուր ծանուցումներ' },
+    { id:'library-users',    group:'own', label:'Գրադարան — օգտվողներ',      note:'Ով ինչ ունի իր մոտ' },
+    { id:'schedule-admin',   group:'own', label:'Դասացուցակ',                note:'Շաբաթվա ժամանակացույց' },
+    { id:'videos-admin',     group:'own', label:'Տեսանյութեր',               note:'Ուսանողական աշխատանքներ' },
+    { id:'director-library', group:'own', label:'Ռեժիսորական գրադարան',      note:'Ֆիլմեր և գրքեր' },
+    { id:'student-list',     group:'own', label:'Ուսանողների ցուցակ',        note:'Դասարանի կազմը' },
+    { id:'schedule-student', group:'student', label:'Դասացուցակ/ժամացուցակ',   note:'Շաբաթվա ժամանակացույց' },
+    { id:'teachers',         group:'student', label:'Դասախոսներ',              note:'Դասավանդողների ցուցակ', special:'teachers' },
+    { id:'directing-tasks',  group:'student', label:'Ռեժիսուրա առաջադրանքներ', note:'Ընթացիկ հանձնարարություններ' },
+    { id:'martin-videos',    group:'student', label:'Տուտորիալներ',            note:'Ուսուցողական տեսանյութեր' },
+  ];
+
+  // Բողոքները ստեղծվում են կայքի կողմից (ուսանողները են ուղարկում), ուստի սա
+  // մնում է հաստատուն, միայն դիտման (read-only) բաժին՝ առանց փոխելու/ջնջելու։
+  const ADMIN_COMPLAINTS_SECTION = { id:'teacher-complaints', label:'Դասախոսների բողոքներ', note:'Ստացված անանուն բողոքները' };
+
+  /* ---------- տեղային cache (localStorage) — էջը բացվում է ակնթարթորեն ---------- */
+  const LS_PREFIX = 'mso_';
+  function lsGet(k){ try{ const v = localStorage.getItem(LS_PREFIX + k); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
+  function lsSet(k, v){ try{ localStorage.setItem(LS_PREFIX + k, JSON.stringify(v)); }catch(e){} }
+  function lsDel(k){ try{ localStorage.removeItem(LS_PREFIX + k); }catch(e){} }
+
+  function newId(prefix){
+    return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  }
+
   /* ============================================================
-     API SHELL — Google Sheets backend-ի հետ կապվող ֆունկցիաները
-     JSONP-ով (<script> դինամիկ ներմուծում), ոչ թե fetch()-ով.
-     Սա աշխատում է նաև file://-ից բացած էջում, քանի որ <script>
-     բեռնումը browser-ը երբեք չի արգելափակում origin-ի պատճառով,
-     ի տարբերություն fetch()-ի (որը file://-ից հաճախ ձախողվում է)։
+     API SHELL — JSONP (<script> դինամիկ ներմուծում)՝ աշխատում է file://-ից էլ
      ============================================================ */
   function apiConfigured(){
     return CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== 'PASTE_YOUR_WEB_APP_URL_HERE';
@@ -619,33 +670,19 @@
       const script = document.createElement('script');
       const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
 
+      // GET հարցման URL-ը սահմանափակ երկարություն ունի. չափազանց երկար տեքստը չենք ուղարկում
+      if (qs.length > 7500){ resolve({ ok:false, error:'too-long' }); return; }
+
       let settled = false;
       const cleanup = () => {
         delete window[cbName];
         if (script.parentNode) script.parentNode.removeChild(script);
         clearTimeout(timeoutId);
       };
-
-      window[cbName] = (data) => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve(data);
-      };
-      script.onerror = () => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve({ ok:false, error:'network' });
-      };
-      // եթե 30 վրկ-ում պատասխան չգա (օր.՝ սխալ URL), չկախվենք ընդմիշտ
-      // (Apps Script-ի առաջին կանչերը "cold start"-ի պատճառով կարող են
-      // տևել մի քանի վայրկյան, ուստի timeout-ը դիտավորյալ առատ է)
+      window[cbName] = (data) => { if (settled) return; settled = true; cleanup(); resolve(data); };
+      script.onerror = () => { if (settled) return; settled = true; cleanup(); resolve({ ok:false, error:'network' }); };
       const timeoutId = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        cleanup();
-        resolve({ ok:false, error:'timeout' });
+        if (settled) return; settled = true; cleanup(); resolve({ ok:false, error:'timeout' });
       }, 30000);
 
       script.src = CONFIG.WEB_APP_URL + '?' + qs;
@@ -659,10 +696,51 @@
       քո Apps Script-ի Web App URL-ը։</div>`;
   }
 
+  /* ---------- գրելու հերթ (write queue) ----------
+     Կայքը փոփոխությունը ցույց է տալիս ԱԿՆԹԱՐԹՈՐԵՆ, իսկ Google-ին ուղարկում է ֆոնում,
+     խիստ հերթականությամբ (որպեսզի «ստեղծել → ջնջել» երբեք չշփոթվի)։ */
+  const syncBadge = document.getElementById('sync-badge');
+  let pendingWrites = 0;
+  let writeChain = Promise.resolve();
+
+  function updateSync(){ syncBadge.classList.toggle('hidden', pendingWrites === 0); }
+  window.addEventListener('beforeunload', (e) => {
+    if (pendingWrites > 0){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  function queueWrite(params, onFail){
+    pendingWrites++; updateSync();
+    const job = writeChain.then(() => apiRequest({ ...params, pin: ADMIN_PIN }));
+    writeChain = job.then(() => {}, () => {});
+    job.then(res => {
+      pendingWrites--; updateSync();
+      if (!res.ok){
+        const msg = {
+          'timeout':  'Պատասխանը ուշացավ․ ստուգում ենք՝ պահպանվե՞լ է։',
+          'too-long': 'Տեքստը չափից երկար է և չպահպանվեց։ Կրճատիր կամ բաժանիր երկու փոստի։',
+          'wrong pin':'Սխալ ադմին-կոդ (ստուգիր ADMIN_PIN-ը HTML-ում և Apps Script-ում)։',
+          'unknown action': 'Apps Script-ը դեռ հին տարբերակով է. կատարիր նոր Deploy (New version)։',
+          'protected':'Այս բաժինը չի կարելի ջնջել։',
+        }[res.error] || 'Չհաջողվեց պահպանել․ փոփոխությունը չեղարկվեց։';
+        showToast(msg);
+        if (onFail) onFail(res);
+      }
+      // հերթը դատարկվեց → համաժամացնում ենք իրական տվյալների հետ
+      if (pendingWrites === 0) resyncVisible();
+    });
+    return job;
+  }
+
+  function resyncVisible(){
+    loadSections();
+    if (!screens.teachers.classList.contains('hidden')) renderTeachers();
+    else if (!screens.content.classList.contains('hidden')) renderPosts();
+  }
+
   /* ---------- navigation state ---------- */
-  let isAdmin = false;          // true only after a correct PIN entry this session
+  let isAdmin = false;
   let currentSectionId = null;
-  let currentBack = 'home';     // which dashboard to return to from the content screen
+  let currentBack = 'home';
   let teachersBack = 'students';
 
   const screens = {
@@ -682,38 +760,159 @@
     mainEl.classList.toggle('center', name === 'home' || name === 'pin');
   }
 
-  /* ---------- build menus ---------- */
+  /* ============================================================
+     ԲԱԺԻՆՆԵՐ — ստեղծել / փոխել / ջնջել
+     ============================================================ */
+  let sections = lsGet('sections') || DEFAULT_SECTIONS.map(s => ({ ...s }));
+  const ownSections = () => sections.filter(s => s.group === 'own');
+  const studentSections = () => sections.filter(s => s.group === 'student');
+  function findSection(id){
+    return sections.find(s => s.id === id) || (id === ADMIN_COMPLAINTS_SECTION.id ? ADMIN_COMPLAINTS_SECTION : null);
+  }
+  function saveSections(){ lsSet('sections', sections); }
+
+  async function loadSections(){
+    const data = await apiRequest({ action:'getSections' });
+    if (pendingWrites > 0) return; // տեղային (դեռ չգրված) փոփոխությունները չենք վերագրում
+    if (data.ok && Array.isArray(data.sections) && data.sections.length){
+      sections = data.sections.map(s => ({
+        id: String(s.id), group: s.group === 'student' ? 'student' : 'own',
+        label: String(s.label || ''), note: String(s.note || ''), special: s.special ? String(s.special) : ''
+      }));
+      saveSections();
+      rebuildMenus();
+    }
+  }
+
   function makeMenuButton(def, onClick){
     const btn = document.createElement('button');
     btn.className = 'menu-item';
-    btn.innerHTML = `<div class="label">${def.label}</div><div class="note">${def.note}</div>`;
+    btn.innerHTML = `<div class="label">${escapeHtml(def.label)}</div><div class="note">${escapeHtml(def.note || '')}</div>`;
     btn.addEventListener('click', onClick);
     return btn;
   }
 
-  function openFromDefinition(def, backTo){
-    if (def.special === 'teachers'){
-      openTeachers(backTo);
-    } else {
-      openSection(def.id, backTo);
+  // ավագանու վահանակում՝ բաժնի կոճակ + ✏️ (փոխել) + 🗑 (ջնջել)
+  function makeManagedItem(def, onOpen){
+    const wrap = document.createElement('div');
+    wrap.className = 'menu-wrap';
+    wrap.appendChild(makeMenuButton(def, onOpen));
+    const tools = document.createElement('div');
+    tools.className = 'menu-tools';
+    const edit = document.createElement('button');
+    edit.type = 'button'; edit.className = 'menu-tool'; edit.title = 'Փոխել անվանումը'; edit.setAttribute('aria-label', 'Փոխել բաժինը');
+    edit.textContent = '✏️';
+    edit.addEventListener('click', () => openSectionModal({ def }));
+    tools.appendChild(edit);
+    if (!def.special){ // «Դասախոսներ»-ը հատուկ բաժին է. կարելի է վերանվանել, բայց ոչ ջնջել
+      const del = document.createElement('button');
+      del.type = 'button'; del.className = 'menu-tool danger'; del.title = 'Ջնջել բաժինը'; del.setAttribute('aria-label', 'Ջնջել բաժինը');
+      del.textContent = '🗑';
+      del.addEventListener('click', () => deleteSection(def));
+      tools.appendChild(del);
     }
+    wrap.appendChild(tools);
+    return wrap;
+  }
+
+  function openFromDefinition(def, backTo){
+    if (def.special === 'teachers') openTeachers(backTo);
+    else openSection(def.id, backTo);
   }
 
   const adminOwnGrid = document.getElementById('admin-own-grid');
-  ADMIN_OWN_SECTIONS.forEach(def => {
-    adminOwnGrid.appendChild(makeMenuButton(def, () => openSection(def.id, 'admin')));
-  });
-  adminOwnGrid.appendChild(makeMenuButton(ADMIN_COMPLAINTS_SECTION, () => openSection(ADMIN_COMPLAINTS_SECTION.id, 'admin')));
-
   const adminManageGrid = document.getElementById('admin-manage-grid');
-  STUDENT_SECTIONS.forEach(def => {
-    adminManageGrid.appendChild(makeMenuButton(def, () => openFromDefinition(def, 'admin')));
-  });
-
   const studentsGrid = document.getElementById('students-menu-grid');
-  STUDENT_SECTIONS.forEach(def => {
-    studentsGrid.appendChild(makeMenuButton(def, () => openFromDefinition(def, 'students')));
+
+  function rebuildMenus(){
+    adminOwnGrid.innerHTML = '';
+    ownSections().forEach(def => adminOwnGrid.appendChild(makeManagedItem(def, () => openFromDefinition(def, 'admin'))));
+    adminOwnGrid.appendChild(makeMenuButton(ADMIN_COMPLAINTS_SECTION, () => openSection(ADMIN_COMPLAINTS_SECTION.id, 'admin')));
+
+    adminManageGrid.innerHTML = '';
+    const st = studentSections();
+    if (!st.length) adminManageGrid.innerHTML = '<div class="empty-state">Ուսանողների բաժիններ դեռ չկան։ Սեղմիր «＋ Նոր բաժին»։</div>';
+    st.forEach(def => adminManageGrid.appendChild(makeManagedItem(def, () => openFromDefinition(def, 'admin'))));
+
+    studentsGrid.innerHTML = '';
+    if (!st.length) studentsGrid.innerHTML = '<div class="empty-state">Բաժիններ դեռ չկան։</div>';
+    st.forEach(def => studentsGrid.appendChild(makeMenuButton(def, () => openFromDefinition(def, 'students'))));
+
+    buildSectionPicker();
+  }
+
+  /* --- section modal --- */
+  const sectionModal = document.getElementById('section-modal');
+  const sectionModalTitle = document.getElementById('section-modal-title');
+  const secLabel = document.getElementById('input-section-label');
+  const secNote = document.getElementById('input-section-note');
+  const secError = document.getElementById('section-form-error');
+  const secSubmit = document.getElementById('btn-section-submit');
+  let editingSection = null;
+  let newSectionGroup = 'own';
+
+  function openSectionModal(opts){
+    secError.textContent = '';
+    if (opts.def){
+      editingSection = opts.def;
+      sectionModalTitle.textContent = 'Փոխել բաժինը';
+      secSubmit.textContent = 'Պահպանել';
+      secLabel.value = opts.def.label;
+      secNote.value = opts.def.note || '';
+    } else {
+      editingSection = null;
+      newSectionGroup = opts.group;
+      sectionModalTitle.textContent = opts.group === 'own' ? 'Նոր բաժին — Մեր նյութերը' : 'Նոր բաժին — Ուսանողների բաժիններ';
+      secSubmit.textContent = 'Ստեղծել';
+      secLabel.value = '';
+      secNote.value = '';
+    }
+    sectionModal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    secLabel.focus();
+  }
+  function closeSectionModal(){
+    sectionModal.classList.add('hidden');
+    document.body.style.overflow = '';
+    editingSection = null;
+  }
+
+  secSubmit.addEventListener('click', () => {
+    if (!isAdmin) return;
+    const label = secLabel.value.trim();
+    const note = secNote.value.trim();
+    if (!label){ secError.textContent = 'Գրիր բաժնի անվանումը։'; return; }
+
+    if (editingSection){
+      const def = editingSection;
+      def.label = label; def.note = note;
+      saveSections(); rebuildMenus(); closeSectionModal();
+      queueWrite({ action:'updateSection', id: def.id, label, note });
+      showToast('Բաժինը թարմացվեց');
+    } else {
+      const def = { id:newId('s'), group:newSectionGroup, label, note, special:'' };
+      sections.push(def);
+      saveSections(); rebuildMenus(); closeSectionModal();
+      queueWrite({ action:'addSection', id: def.id, group: def.group, label, note });
+      showToast(`Բաժինը «${label}» ստեղծվեց`);
+    }
   });
+  document.getElementById('btn-section-cancel').addEventListener('click', closeSectionModal);
+  sectionModal.addEventListener('mousedown', (e) => { if (e.target === sectionModal) closeSectionModal(); });
+  [secLabel, secNote].forEach(el => el.addEventListener('keydown', (e) => { if (e.key === 'Enter') secSubmit.click(); }));
+
+  document.getElementById('btn-add-own-section').addEventListener('click', () => openSectionModal({ group:'own' }));
+  document.getElementById('btn-add-student-section').addEventListener('click', () => openSectionModal({ group:'student' }));
+
+  function deleteSection(def){
+    const ok = confirm(`Ջնջե՞լ «${def.label}» բաժինը և նրա ԲՈԼՈՐ նյութերը։\nԱյս գործողությունը հնարավոր չէ չեղարկել։`);
+    if (!ok) return;
+    sections = sections.filter(s => s.id !== def.id);
+    delete postsCache[def.id]; lsDel('posts_' + def.id);
+    saveSections(); rebuildMenus();
+    queueWrite({ action:'deleteSection', id: def.id });
+    showToast('Բաժինը ջնջվեց');
+  }
 
   /* ---------- pin flow ---------- */
   const pinInputs = Array.from(document.querySelectorAll('.pin-inputs input'));
@@ -725,15 +924,14 @@
   }
 
   document.getElementById('btn-seniors').addEventListener('click', () => {
-    resetPin();
-    show('pin');
-    pinInputs[0].focus();
+    resetPin(); show('pin'); pinInputs[0].focus();
   });
 
   document.getElementById('btn-students').addEventListener('click', () => {
     isAdmin = false;
     modeBadge.classList.add('hidden');
     show('students');
+    loadSections();
   });
 
   document.getElementById('btn-students-back').addEventListener('click', () => show('home'));
@@ -747,31 +945,23 @@
   pinInputs.forEach((input, idx) => {
     input.addEventListener('input', () => {
       input.value = input.value.replace(/[^0-9]/g, '').slice(0,1);
-      if (input.value && idx < pinInputs.length - 1){
-        pinInputs[idx+1].focus();
-      }
+      if (input.value && idx < pinInputs.length - 1) pinInputs[idx+1].focus();
     });
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !input.value && idx > 0){
-        pinInputs[idx-1].focus();
-      }
-      if (e.key === 'Enter'){
-        checkPin();
-      }
+      if (e.key === 'Backspace' && !input.value && idx > 0) pinInputs[idx-1].focus();
+      if (e.key === 'Enter') checkPin();
     });
   });
 
   function checkPin(){
     const code = pinInputs.map(i => i.value).join('');
-    if (code.length < 4){
-      pinError.textContent = 'Մուտքագրիր 4 նիշ։';
-      return;
-    }
+    if (code.length < 4){ pinError.textContent = 'Մուտքագրիր 4 նիշ։'; return; }
     if (code === ADMIN_PIN){
       pinError.textContent = '';
       isAdmin = true;
       modeBadge.classList.remove('hidden');
       show('admin');
+      loadSections();
     } else {
       pinError.textContent = 'Սխալ կոդ։ Փորձիր կրկին։';
       resetPin();
@@ -816,6 +1006,7 @@
   function isDirectVideoFile(url){
     return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
   }
+
   function renderVideo(url){
     const yt = getYouTubeId(url);
     if (yt){
@@ -835,96 +1026,142 @@
   const contentTitle = document.getElementById('content-title');
   const contentNote = document.getElementById('content-note');
   const postList = document.getElementById('post-list');
+  const PAGE_SIZE = 10;            // սկզբում ցույց ենք տալիս 10 նյութ, մնացածը՝ «Ավելին» կոճակով
   let currentPosts = [];
+  let shown = 0;
+  let postsCache = {};             // sectionId → փոստերի զանգված
+
+  function cachedPosts(id){
+    if (!postsCache[id]){ const v = lsGet('posts_' + id); if (v) postsCache[id] = v; }
+    return postsCache[id] || null;
+  }
+  function storePosts(id, arr){ postsCache[id] = arr; lsSet('posts_' + id, arr); }
 
   document.getElementById('btn-content-back').addEventListener('click', () => show(currentBack));
 
   async function openSection(sectionId, backTo){
+    const def = findSection(sectionId);
+    if (!def){ show(backTo); return; }
     currentBack = backTo;
-    const def = STUDENT_SECTIONS.find(s => s.id === sectionId) ||
-      ADMIN_OWN_SECTIONS.find(s => s.id === sectionId) ||
-      (sectionId === ADMIN_COMPLAINTS_SECTION.id ? ADMIN_COMPLAINTS_SECTION : null);
     currentSectionId = sectionId;
     contentTitle.textContent = def.label;
-    contentNote.textContent = def.note;
+    contentNote.textContent = def.note || '';
+    shown = 0;
     show('content');
     await renderPosts();
   }
 
-  /* posts are now fetched from / written to the Google Sheets backend
-     through the Apps Script Web App, instead of localStorage */
   async function getPosts(sectionId){
     const data = await apiRequest({ action:'getPosts', section: sectionId });
     if (!data.ok) return { ok:false, posts:[] };
     return { ok:true, posts:data.posts || [] };
   }
 
+  // Stale-while-revalidate. նախ ցույց ենք տալիս պահված տարբերակը (ակնթարթորեն),
+  // հետո ֆոնում թարմացնում ենք սերվերի տվյալներով
   async function renderPosts(){
-    postList.innerHTML = '<div class="empty-state">Բեռնվում է…</div>';
-    const { ok, posts: all } = await getPosts(currentSectionId);
+    const sid = currentSectionId;
+    const cached = cachedPosts(sid);
+    if (cached) drawPosts();
+    else postList.innerHTML = '<div class="empty-state">Բեռնվում է…</div>';
+
+    if (pendingWrites > 0 && cached) return;
+    const { ok, posts } = await getPosts(sid);
+    if (sid !== currentSectionId) return;
+    if (pendingWrites > 0 && cached) return;
     if (!ok){
-      postList.innerHTML = apiConfigured()
-        ? '<div class="empty-state">Չհաջողվեց բեռնել տվյալները։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։</div>'
-        : configWarning();
+      if (!cached){
+        postList.innerHTML = apiConfigured()
+          ? '<div class="empty-state">Չհաջողվեց բեռնել տվյալները։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։</div>'
+          : configWarning();
+      }
       return;
     }
-    // newest first (ըստ ամսաթվի; փոփոխված փոստը պահպանում է իր սկզբնական ամսաթիվը)
-    const posts = all.map((p, i) => ({ p, i })).sort((a, b) => {
+    storePosts(sid, posts);
+    drawPosts();
+  }
+
+  function buildPostCard(post){
+    const card = document.createElement('div');
+    card.className = 'post-card';
+
+    let body = '';
+    if (post.type === 'text'){
+      body = `<div class="post-text">${formatRich(post.text || '')}</div>`;
+    } else if (post.type === 'image'){
+      body = `<img src="${escapeAttr(post.url)}" alt="${escapeAttr(post.caption || '')}" loading="lazy" decoding="async">`;
+      if (post.caption) body += `<div class="post-caption">${formatRich(post.caption)}</div>`;
+    } else if (post.type === 'video'){
+      body = renderVideo(post.url || '');
+      if (post.caption) body += `<div class="post-caption">${formatRich(post.caption)}</div>`;
+    }
+
+    card.innerHTML = `
+      <div class="post-meta">
+        <span>${formatDate(post.date)}</span>
+        ${isAdmin ? `<div class="post-actions">
+          ${currentSectionId !== ADMIN_COMPLAINTS_SECTION.id ? `<button class="btn btn-secondary btn-sm" data-edit-id="${escapeAttr(post.id)}">Փոխել</button>` : ''}
+          <button class="btn btn-danger btn-sm" data-id="${escapeAttr(post.id)}">Ջնջել</button>
+        </div>` : ''}
+      </div>
+      ${body}
+    `;
+    return card;
+  }
+
+  function drawPosts(){
+    const all = cachedPosts(currentSectionId) || [];
+    // newest first (ըստ ամսաթվի)
+    currentPosts = all.map((p, i) => ({ p, i })).sort((a, b) => {
       const da = Date.parse(a.p.date) || 0, db = Date.parse(b.p.date) || 0;
       return (db - da) || (b.i - a.i);
     }).map(x => x.p);
-    currentPosts = posts;
+
     postList.innerHTML = '';
-    if (posts.length === 0){
+    if (currentPosts.length === 0){
       postList.innerHTML = '<div class="empty-state">Այստեղ դեռ նյութ չկա։</div>';
       return;
     }
-    posts.forEach((post) => {
-      const card = document.createElement('div');
-      card.className = 'post-card';
+    const keep = Math.max(PAGE_SIZE, shown); // թարմացնելիս չենք «փակում» արդեն բացված էջերը
+    shown = 0;
+    appendBatch(keep);
+  }
 
-      let body = '';
-      if (post.type === 'text'){
-        body = `<div class="post-text">${formatRich(post.text || '')}</div>`;
-      } else if (post.type === 'image'){
-        body = `<img src="${escapeAttr(post.url)}" alt="${escapeAttr(post.caption || '')}" loading="lazy">`;
-        if (post.caption) body += `<div class="post-caption">${formatRich(post.caption)}</div>`;
-      } else if (post.type === 'video'){
-        body = renderVideo(post.url);
-        if (post.caption) body += `<div class="post-caption">${formatRich(post.caption)}</div>`;
-      }
-
-      card.innerHTML = `
-        <div class="post-meta">
-          <span>${formatDate(post.date)}</span>
-          ${isAdmin ? `<div class="post-actions">
-            ${currentSectionId !== ADMIN_COMPLAINTS_SECTION.id ? `<button class="btn btn-secondary btn-sm" data-edit-id="${escapeAttr(post.id)}">Փոխել</button>` : ''}
-            <button class="btn btn-danger btn-sm" data-id="${escapeAttr(post.id)}">Ջնջել</button>
-          </div>` : ''}
-        </div>
-        ${body}
-      `;
-      postList.appendChild(card);
-    });
-
-    if (isAdmin){
-      postList.querySelectorAll('button[data-edit-id]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const post = currentPosts.find(p => String(p.id) === btn.dataset.editId);
-          if (post) openPostModal({ post, sectionId: currentSectionId });
-        });
-      });
-      postList.querySelectorAll('button[data-id]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          btn.textContent = '…';
-          await apiRequest({ action:'deletePost', sectionId: currentSectionId, id: btn.dataset.id, pin: ADMIN_PIN });
-          renderPosts();
-        });
-      });
+  function appendBatch(n){
+    const oldMore = postList.querySelector('.more-wrap');
+    if (oldMore) oldMore.remove();
+    const frag = document.createDocumentFragment();
+    const slice = currentPosts.slice(shown, shown + n);
+    slice.forEach(p => frag.appendChild(buildPostCard(p)));
+    postList.appendChild(frag);
+    shown += slice.length;
+    if (shown < currentPosts.length){
+      const wrap = document.createElement('div');
+      wrap.className = 'more-wrap';
+      wrap.innerHTML = `<button class="btn btn-secondary btn-sm" data-more="1">Ցույց տալ ավելին (${currentPosts.length - shown})</button>`;
+      postList.appendChild(wrap);
     }
   }
 
+  postList.addEventListener('click', (e) => {
+    if (e.target.closest('[data-more]')){ appendBatch(PAGE_SIZE); return; }
+    if (!isAdmin) return;
+
+    const editBtn = e.target.closest('[data-edit-id]');
+    if (editBtn){
+      const post = currentPosts.find(p => String(p.id) === editBtn.dataset.editId);
+      if (post) openPostModal({ post, sectionId: currentSectionId });
+      return;
+    }
+    const delBtn = e.target.closest('button[data-id]');
+    if (delBtn){
+      const id = delBtn.dataset.id;
+      const sid = currentSectionId;
+      storePosts(sid, (cachedPosts(sid) || []).filter(p => String(p.id) !== id)); // ակնթարթորեն անհետանում է
+      drawPosts();
+      queueWrite({ action:'deletePost', sectionId: sid, id });
+    }
+  });
   /* ---------- create / edit post modal ---------- */
   const modalEl = document.getElementById('post-modal');
   const modalTitle = document.getElementById('post-modal-title');
@@ -937,8 +1174,8 @@
   const toastEl = document.getElementById('toast');
 
   let activeType = 'text';
-  let editing = null;          // { post, sectionId } when editing an existing post
-  let submitting = false;
+  let editing = null;          // { post, sectionId } երբ փոխում ենք գոյություն ունեցող փոստը
+  let editingTeacher = null;   // դասախոսի օբյեկտ, երբ փոխում ենք դասախոսին
 
   const typeTabs = Array.from(modalTypeTabs.querySelectorAll('.type-tab'));
   const fieldGroups = {
@@ -947,9 +1184,12 @@
     video: document.getElementById('fields-video'),
   };
 
-  // section picker: Ավագանու բաժիններ + Ուսանողների բաժիններ
-  (function buildSectionPicker(){
+  // section picker: Ավագանու բաժիններ + Ուսանողների բաժիններ (վերակառուցվում է բաժինների փոփոխության ժամանակ)
+  function buildSectionPicker(){
+    const prev = modalSection.value;
+    modalSection.innerHTML = '';
     const addGroup = (label, list) => {
+      if (!list.length) return;
       const g = document.createElement('optgroup');
       g.label = label;
       list.forEach(def => {
@@ -960,12 +1200,20 @@
       });
       modalSection.appendChild(g);
     };
-    addGroup('Ավագանի — Մեր նյութերը', ADMIN_OWN_SECTIONS);
-    addGroup('Ուսանողների բաժիններ', STUDENT_SECTIONS);
-  })();
+    addGroup('Ավագանի — Մեր նյութերը', ownSections());
+    addGroup('Ուսանողների բաժիններ', studentSections());
+    if (prev && sections.some(s => s.id === prev)) modalSection.value = prev;
+  }
+
+  function isTeacherMode(){
+    if (editingTeacher) return true;
+    if (editing) return false;
+    const s = findSection(modalSection.value);
+    return !!(s && s.special === 'teachers');
+  }
 
   function syncModalFields(){
-    const isTeacher = !editing && modalSection.value === 'teachers';
+    const isTeacher = isTeacherMode();
     modalTypeTabs.classList.toggle('hidden', !!editing || isTeacher);
     Object.entries(fieldGroups).forEach(([type, el]) => el.classList.toggle('hidden', isTeacher || type !== activeType));
     fieldTeacher.classList.toggle('hidden', !isTeacher);
@@ -987,43 +1235,65 @@
     formError.textContent = '';
   }
 
+  function fillPostFields(type, post){
+    if (type === 'text'){
+      document.getElementById('input-text').value = post.text || '';
+    } else if (type === 'image'){
+      document.getElementById('input-image-url').value = post.url || '';
+      document.getElementById('input-image-caption').value = post.caption || '';
+    } else if (type === 'video'){
+      document.getElementById('input-video-url').value = post.url || '';
+      document.getElementById('input-video-caption').value = post.caption || '';
+    }
+  }
+
+  function showModal(){
+    syncModalFields();
+    modalEl.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+
   function openPostModal(opts){
     opts = opts || {};
-    submitting = false;
     modalSubmit.disabled = false;
     clearModalInputs();
+    editingTeacher = null;
     if (opts.post){
       editing = { post: opts.post, sectionId: opts.sectionId };
       activeType = opts.post.type;
       modalTitle.textContent = 'Փոխել փոստը';
       modalSubmit.textContent = 'Պահպանել';
       modalSectionField.classList.add('hidden');
-      if (activeType === 'text'){
-        document.getElementById('input-text').value = opts.post.text || '';
-      } else if (activeType === 'image'){
-        document.getElementById('input-image-url').value = opts.post.url || '';
-        document.getElementById('input-image-caption').value = opts.post.caption || '';
-      } else if (activeType === 'video'){
-        document.getElementById('input-video-url').value = opts.post.url || '';
-        document.getElementById('input-video-caption').value = opts.post.caption || '';
-      }
+      fillPostFields(activeType, opts.post);
     } else {
       editing = null;
       activeType = 'text';
       modalTitle.textContent = 'Ստեղծել փոստ';
       modalSubmit.textContent = 'Հրապարակել';
       modalSectionField.classList.remove('hidden');
-      if (opts.sectionId) modalSection.value = opts.sectionId;
+      if (opts.sectionId && sections.some(s => s.id === opts.sectionId)) modalSection.value = opts.sectionId;
     }
-    syncModalFields();
-    modalEl.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    showModal();
+  }
+
+  function openTeacherModal(t){
+    modalSubmit.disabled = false;
+    clearModalInputs();
+    editing = null;
+    editingTeacher = t;
+    modalTitle.textContent = 'Փոխել դասախոսին';
+    modalSubmit.textContent = 'Պահպանել';
+    modalSectionField.classList.add('hidden');
+    document.getElementById('input-teacher-name').value = t.name || '';
+    document.getElementById('input-teacher-link').value = t.subjectLink || '';
+    showModal();
   }
 
   function closePostModal(){
     modalEl.classList.add('hidden');
     document.body.style.overflow = '';
     editing = null;
+    editingTeacher = null;
   }
 
   let toastTimer = null;
@@ -1038,7 +1308,9 @@
   document.getElementById('btn-modal-cancel').addEventListener('click', closePostModal);
   modalEl.addEventListener('mousedown', (e) => { if (e.target === modalEl) closePostModal(); });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !modalEl.classList.contains('hidden')) closePostModal();
+    if (e.key !== 'Escape') return;
+    if (!modalEl.classList.contains('hidden')) closePostModal();
+    else if (!sectionModal.classList.contains('hidden')) closeSectionModal();
   });
 
   /* --- bold text: wraps the selection in **…** (Ctrl+B / B button) --- */
@@ -1059,7 +1331,7 @@
   }
   document.querySelectorAll('.bold-btn').forEach(btn => {
     const target = document.getElementById(btn.dataset.boldFor);
-    btn.addEventListener('mousedown', (e) => e.preventDefault()); // don't lose the selection
+    btn.addEventListener('mousedown', (e) => e.preventDefault());
     btn.addEventListener('click', () => toggleBold(target));
     target.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b'){
@@ -1069,39 +1341,41 @@
     });
   });
 
-  /* --- submit (create / save / add teacher) --- */
-  modalSubmit.addEventListener('click', async () => {
-    if (!isAdmin || submitting) return;
+  /* --- submit (create / save / add or edit teacher) ---
+     Ամեն ինչ արվում է «օպտիմիստորեն». UI-ն թարմացվում է անմիջապես, Google Sheets-ին
+     գրելը կատարվում է ֆոնում (queueWrite)։ Ձախողման դեպքում ցույց է տրվում սխալ։ */
+  modalSubmit.addEventListener('click', () => {
+    if (!isAdmin) return;
     formError.textContent = '';
 
-    const isTeacher = !editing && modalSection.value === 'teachers';
-    const originalLabel = modalSubmit.textContent;
-    const setBusy = (busy, label) => {
-      submitting = busy;
-      modalSubmit.disabled = busy;
-      modalSubmit.textContent = busy ? label : originalLabel;
-    };
-    const failText = (res, fallback) => apiConfigured()
-      ? fallback
-      : 'Google Sheets-ի կապը կարգավորված չէ (տես CONFIG.WEB_APP_URL)։';
-
-    /* teacher */
-    if (isTeacher){
+    /* --- դասախոս (նոր կամ փոխել) --- */
+    if (isTeacherMode()){
       const name = document.getElementById('input-teacher-name').value.trim();
       const link = document.getElementById('input-teacher-link').value.trim();
       if (!name){ formError.textContent = 'Գրիր դասախոսի անունը։'; return; }
-      setBusy(true, 'Ավելացվում է…');
-      const res = await apiRequest({ action:'addTeacher', name, subjectLink: link, pin: ADMIN_PIN });
-      setBusy(false);
-      if (!res.ok){ formError.textContent = failText(res, 'Չհաջողվեց ավելացնել։ Փորձիր կրկին։'); return; }
-      closePostModal();
-      showToast('Դասախոսն ավելացվեց «Դասախոսներ» բաժնում');
+      const list = (teachersCache || []).slice();
+
+      if (editingTeacher){
+        const t = editingTeacher;
+        const idx = list.findIndex(x => x.id === t.id);
+        if (idx > -1) list[idx] = { ...list[idx], name, subjectLink: link };
+        storeTeachers(list);
+        closePostModal();
+        if (!screens.teachers.classList.contains('hidden')) drawTeachers();
+        queueWrite({ action:'updateTeacher', id: t.id, name, subjectLink: link });
+        showToast('Դասախոսի տվյալները պահպանվեցին');
+      } else {
+        const t = { id:newId('t'), name, subjectLink: link };
+        if (teachersCache) storeTeachers([...list, t]);
+        closePostModal();
+        queueWrite({ action:'addTeacher', id: t.id, name, subjectLink: link });
+        showToast('Դասախոսն ավելացվեց «Դասախոսներ» բաժնում');
+      }
       return;
     }
 
-    /* regular post */
+    /* --- կանոնավոր փոստ --- */
     const type = activeType;
-    const date = editing ? (editing.post.date || new Date().toISOString()) : new Date().toISOString();
     let post = null;
     if (type === 'text'){
       const text = document.getElementById('input-text').value.trim();
@@ -1117,68 +1391,54 @@
       post = { type:'video', url, caption: document.getElementById('input-video-caption').value.trim() };
     }
 
-    const sectionId = editing ? editing.sectionId : modalSection.value;
-    const wasEditing = !!editing;
-    const editingPost = editing && editing.post;
-    setBusy(true, wasEditing ? 'Պահպանվում է…' : 'Հրապարակվում է…');
+    const contentVisibleFor = (sid) => currentSectionId === sid && !screens.content.classList.contains('hidden');
 
-    const finish = () => {
-      setBusy(false);
-      closePostModal();
-      if (!screens.content.classList.contains('hidden')) renderPosts();
-      const def = [...ADMIN_OWN_SECTIONS, ...STUDENT_SECTIONS].find(s => s.id === sectionId);
-      showToast(wasEditing ? 'Փոփոխությունները պահպանվեցին'
-                           : `Փոստը հրապարակվեց «${def ? def.label : sectionId}» բաժնում`);
-    };
-    const fail = (res) => {
-      setBusy(false);
-      formError.textContent = res.error === 'timeout'
-        ? 'Պատասխանը ուշացավ, բայց հնարավոր է փոստն արդեն պահպանվել է. ստուգիր բաժինը՝ կրկնակի չհրապարակելու համար։'
-        : failText(res, 'Չհաջողվեց պահպանել։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։');
-      if (currentSectionId === sectionId && !screens.content.classList.contains('hidden')) renderPosts();
-    };
-
-    /* EDIT: փոխում ենք նույն տողը Sheet-ում (updatePost) */
-    if (wasEditing){
-      const upd = await apiRequest({
-        action:'updatePost', sectionId, id: editingPost.id,
-        text: post.text || '', url: post.url || '', caption: post.caption || '',
-        pin: ADMIN_PIN
-      });
-      if (upd.ok){ finish(); return; }
-      // Եթե Apps Script-ը դեռ նոր տարբերակով չի deploy արվել, անցնում ենք
-      // հին եղանակին՝ նոր փոստ + հինի ջնջում (ամսաթիվը պահվում է)
-      if (upd.error !== 'unknown action'){ fail(upd); return; }
-    }
-
-    /* CREATE (կամ edit-ի fallback) */
-    const res = await apiRequest({
-      action:'addPost',
-      sectionId,
-      type: post.type,
-      text: post.text || '',
-      url: post.url || '',
-      caption: post.caption || '',
-      date,
-      pin: ADMIN_PIN
-    });
-    if (!res.ok){ fail(res); return; }
-
-    if (wasEditing){
-      const del = await apiRequest({ action:'deletePost', sectionId, id: editingPost.id, pin: ADMIN_PIN });
-      if (!del.ok){
-        setBusy(false);
-        modalSubmit.disabled = true; // նոր տարբերակն արդեն պահպանված է
-        formError.textContent = 'Նոր տարբերակը պահպանվեց, բայց հները չջնջվեց։ Փակիր պատուհանը և ջնջիր հները ձեռքով։';
-        renderPosts();
-        return;
+    /* EDIT */
+    if (editing){
+      const { post: old, sectionId } = editing;
+      const list = (cachedPosts(sectionId) || []).slice();
+      const idx = list.findIndex(p => String(p.id) === String(old.id));
+      if (idx > -1){
+        list[idx] = { ...list[idx], text: post.text || '', url: post.url || '', caption: post.caption || '' };
+        storePosts(sectionId, list);
       }
+      closePostModal();
+      if (contentVisibleFor(sectionId)) drawPosts();
+      queueWrite({ action:'updatePost', sectionId, id: old.id, text: post.text || '', url: post.url || '', caption: post.caption || '' });
+      showToast('Փոփոխությունները պահպանվեցին');
+      return;
     }
-    finish();
+
+    /* CREATE */
+    const sectionId = modalSection.value;
+    const rec = {
+      id: newId('p'), sectionId, type: post.type,
+      text: post.text || '', url: post.url || '', caption: post.caption || '',
+      date: new Date().toISOString()
+    };
+    const list = cachedPosts(sectionId);
+    if (list) storePosts(sectionId, [...list, rec]);
+    closePostModal();
+    if (contentVisibleFor(sectionId)) drawPosts();
+    const def = findSection(sectionId);
+    showToast(`Փոստը հրապարակվեց «${def ? def.label : sectionId}» բաժնում`);
+
+    queueWrite({ action:'addPost', ...rec }, () => {
+      // ձախողվեց → վերադարձնում ենք գրածը, որպեսզի չկորչի
+      if (modalEl.classList.contains('hidden')){
+        openPostModal({ sectionId });
+        activeType = type;
+        fillPostFields(type, post);
+        syncModalFields();
+      }
+    });
   });
 
   /* ---------- teachers screen ---------- */
   const teacherList = document.getElementById('teacher-list');
+  let teachersCache = lsGet('teachers');
+
+  function storeTeachers(arr){ teachersCache = arr; lsSet('teachers', arr); }
 
   document.getElementById('btn-teachers-back').addEventListener('click', () => show(teachersBack));
 
@@ -1195,14 +1455,26 @@
   }
 
   async function renderTeachers(){
-    teacherList.innerHTML = '<div class="empty-state">Բեռնվում է…</div>';
+    if (teachersCache) drawTeachers();
+    else teacherList.innerHTML = '<div class="empty-state">Բեռնվում է…</div>';
+
+    if (pendingWrites > 0 && teachersCache) return;
     const { ok, teachers } = await getTeachers();
+    if (pendingWrites > 0 && teachersCache) return;
     if (!ok){
-      teacherList.innerHTML = apiConfigured()
-        ? '<div class="empty-state">Չհաջողվեց բեռնել տվյալները։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։</div>'
-        : configWarning();
+      if (!teachersCache){
+        teacherList.innerHTML = apiConfigured()
+          ? '<div class="empty-state">Չհաջողվեց բեռնել տվյալները։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։</div>'
+          : configWarning();
+      }
       return;
     }
+    storeTeachers(teachers);
+    drawTeachers();
+  }
+
+  function drawTeachers(){
+    const teachers = teachersCache || [];
     teacherList.innerHTML = '';
     if (teachers.length === 0){
       teacherList.innerHTML = '<div class="empty-state">Դասախոսներ դեռ ավելացված չեն։</div>';
@@ -1216,7 +1488,8 @@
         ${t.subjectLink ? `<div class="teacher-link"><a href="${escapeAttr(t.subjectLink)}" target="_blank" rel="noopener">Առարկայի բնութագիրը</a></div>` : ''}
         <div class="teacher-actions">
           ${isAdmin
-            ? `<button class="btn btn-danger btn-sm" data-delete-id="${escapeAttr(t.id)}">Ջնջել</button>`
+            ? `<button class="btn btn-secondary btn-sm" data-edit-teacher-id="${escapeAttr(t.id)}">Փոխել</button>
+               <button class="btn btn-danger btn-sm" data-delete-id="${escapeAttr(t.id)}">Ջնջել</button>`
             : `<button class="btn btn-secondary btn-sm" data-complain-id="${escapeAttr(t.id)}">Բողոքել</button>`
           }
         </div>
@@ -1233,55 +1506,57 @@
       `;
       teacherList.appendChild(card);
     });
-
-    if (isAdmin){
-      teacherList.querySelectorAll('button[data-delete-id]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          await apiRequest({ action:'deleteTeacher', id: btn.dataset.deleteId, pin: ADMIN_PIN });
-          renderTeachers();
-        });
-      });
-    } else {
-      teacherList.querySelectorAll('button[data-complain-id]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const form = teacherList.querySelector(`[data-complaint-form-id="${btn.dataset.complainId}"]`);
-          if (form) form.classList.toggle('hidden');
-        });
-      });
-      teacherList.querySelectorAll('button[data-send-complaint-id]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const teacherId = btn.dataset.sendComplaintId;
-          const form = teacherList.querySelector(`[data-complaint-form-id="${teacherId}"]`);
-          const textarea = form.querySelector('textarea');
-          const errorEl = form.querySelector('.form-error');
-          const successEl = form.querySelector('.form-success');
-          const text = textarea.value.trim();
-          if (!text){
-            errorEl.textContent = 'Գրիր բողոքի տեքստը։';
-            return;
-          }
-          const currentTeachers = (await getTeachers()).teachers;
-          const teacher = currentTeachers.find(x => x.id === teacherId);
-          const teacherName = teacher ? teacher.name : 'Անհայտ դասախոս';
-          btn.disabled = true;
-          const res = await apiRequest({
-            action:'addComplaint',
-            text: `Դասախոս՝ ${teacherName}\n\n${text}`
-          });
-          if (!res.ok){
-            errorEl.textContent = 'Չհաջողվեց ուղարկել։ Փորձիր կրկին։';
-            btn.disabled = false;
-            return;
-          }
-          errorEl.textContent = '';
-          textarea.value = '';
-          textarea.disabled = true;
-          successEl.classList.remove('hidden');
-        });
-      });
-    }
   }
+
+  teacherList.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('[data-edit-teacher-id]');
+    if (editBtn && isAdmin){
+      const t = (teachersCache || []).find(x => x.id === editBtn.dataset.editTeacherId);
+      if (t) openTeacherModal(t);
+      return;
+    }
+    const delBtn = e.target.closest('[data-delete-id]');
+    if (delBtn && isAdmin){
+      const id = delBtn.dataset.deleteId;
+      storeTeachers((teachersCache || []).filter(x => x.id !== id));
+      drawTeachers();
+      queueWrite({ action:'deleteTeacher', id });
+      return;
+    }
+    const complainBtn = e.target.closest('[data-complain-id]');
+    if (complainBtn){
+      const form = teacherList.querySelector(`[data-complaint-form-id="${complainBtn.dataset.complainId}"]`);
+      if (form) form.classList.toggle('hidden');
+      return;
+    }
+    const sendBtn = e.target.closest('[data-send-complaint-id]');
+    if (sendBtn){
+      const teacherId = sendBtn.dataset.sendComplaintId;
+      const form = teacherList.querySelector(`[data-complaint-form-id="${teacherId}"]`);
+      const textarea = form.querySelector('textarea');
+      const errorEl = form.querySelector('.form-error');
+      const successEl = form.querySelector('.form-success');
+      const text = textarea.value.trim();
+      if (!text){ errorEl.textContent = 'Գրիր բողոքի տեքստը։'; return; }
+      const teacher = (teachersCache || []).find(x => x.id === teacherId);
+      const teacherName = teacher ? teacher.name : 'Անհայտ դասախոս';
+      sendBtn.disabled = true;
+      const res = await apiRequest({ action:'addComplaint', text: `Դասախոս՝ ${teacherName}\n\n${text}` });
+      if (!res.ok){
+        errorEl.textContent = res.error === 'too-long' ? 'Բողոքը չափից երկար է, կրճատիր։' : 'Չհաջողվեց ուղարկել։ Փորձիր կրկին։';
+        sendBtn.disabled = false;
+        return;
+      }
+      errorEl.textContent = '';
+      textarea.value = '';
+      textarea.disabled = true;
+      successEl.classList.remove('hidden');
+    }
+  });
+
+  /* ---------- մեկնարկ ---------- */
+  rebuildMenus();   // նախ՝ պահված (կամ սկզբնական) բաժիններով, ակնթարթորեն
+  loadSections();   // հետո ֆոնում՝ սերվերի իրական ցուցակով
 </script>
 <audio id="bg-music" src="music.mp3" preload="auto"></audio>
 <script>

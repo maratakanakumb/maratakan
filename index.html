@@ -314,6 +314,64 @@
     font-size:14px;
   }
 
+  .post-card .post-meta .post-actions{display:flex; gap:8px;}
+  .post-card .post-text strong, .post-caption strong{font-weight:700;}
+
+  /* --- select field --- */
+  .field select{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--bg);
+    color:var(--ink);
+    font:inherit;
+    font-size:14px;
+    padding:10px 12px;
+  }
+  .label-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px;}
+  .label-row label{margin:0 !important;}
+  .bold-btn{
+    border:1px solid var(--line);
+    background:var(--bg);
+    color:var(--ink);
+    border-radius:6px;
+    width:30px; height:28px;
+    font:inherit; font-weight:800; font-size:14px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .bold-btn:hover{border-color:var(--accent); color:var(--accent);}
+  .dash-actions{display:flex; align-items:center; gap:8px;}
+
+  /* --- create / edit post modal --- */
+  .modal-backdrop{
+    position:fixed; inset:0; z-index:50;
+    background:rgba(0,0,0,.5);
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    overflow-y:auto;
+  }
+  .modal-backdrop.hidden{display:none;}
+  .modal{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+    width:100%; max-width:520px;
+    margin:auto 0;
+  }
+  .modal h2{font-size:17px; margin:0 0 16px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px;}
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+    z-index:60;
+    background:var(--ink); color:var(--bg);
+    padding:10px 16px; border-radius:8px;
+    font-size:13.5px; max-width:90vw;
+  }
+  .toast.hidden{display:none;}
+
   /* --- teachers screen --- */
   .teacher-card .teacher-name{font-weight:600; font-size:15px; margin-bottom:4px;}
   .teacher-card .teacher-link{font-size:13px;}
@@ -374,7 +432,10 @@
   <section class="screen wide hidden" id="screen-admin">
     <div class="dash-head">
       <h1 class="title" style="text-align:left; margin:0;">Ավագանու վահանակ</h1>
-      <button class="btn btn-link" id="btn-admin-logout">Ելք</button>
+      <div class="dash-actions">
+        <button class="btn btn-primary btn-sm" id="btn-create-post">＋ Ստեղծել փոստ</button>
+        <button class="btn btn-link" id="btn-admin-logout">Ելք</button>
+      </div>
     </div>
 
     <div class="admin-block">
@@ -388,7 +449,7 @@
     <div class="admin-block">
       <div class="section-subhead">
         <h2>Ուսանողների բաժինների կառավարում</h2>
-        <p>Ընտրիր ենթաբաժինը՝ նյութ հրապարակելու համար</p>
+        <p>Ընտրիր ենթաբաժինը՝ նյութերը դիտելու, փոխելու կամ ջնջելու համար</p>
       </div>
       <div class="menu-grid" id="admin-manage-grid"></div>
     </div>
@@ -413,49 +474,6 @@
       <p id="content-note"></p>
     </div>
 
-    <div class="add-post-panel hidden" id="add-post-panel">
-      <h2>Ավելացնել նյութ</h2>
-      <div class="type-tabs">
-        <button class="type-tab active" data-type="text">Տեքստ</button>
-        <button class="type-tab" data-type="image">Նկար</button>
-        <button class="type-tab" data-type="video">Տեսանյութ</button>
-      </div>
-
-      <div id="fields-text">
-        <div class="field">
-          <label for="input-text">Տեքստ</label>
-          <textarea id="input-text" placeholder="Գրիր հաղորդագրությունը..."></textarea>
-        </div>
-      </div>
-
-      <div id="fields-image" class="hidden">
-        <div class="field">
-          <label for="input-image-url">Նկարի հղում (URL)</label>
-          <input type="url" id="input-image-url" placeholder="https://...">
-          <div class="hint">Նկարը չի պահվում կայքում, միայն հղումը՝ ինտերնետից։</div>
-        </div>
-        <div class="field">
-          <label for="input-image-caption">Ստորագրություն (ոչ պարտադիր)</label>
-          <input type="text" id="input-image-caption" placeholder="Ստորագրություն...">
-        </div>
-      </div>
-
-      <div id="fields-video" class="hidden">
-        <div class="field">
-          <label for="input-video-url">Տեսանյութի հղում (YouTube, Vimeo կամ .mp4)</label>
-          <input type="url" id="input-video-url" placeholder="https://www.youtube.com/watch?v=...">
-          <div class="hint">Տեսանյութը կկցվի ուղղակիորեն էջում, առանց YouTube անցնելու։</div>
-        </div>
-        <div class="field">
-          <label for="input-video-caption">Ստորագրություն (ոչ պարտադիր)</label>
-          <input type="text" id="input-video-caption" placeholder="Ստորագրություն...">
-        </div>
-      </div>
-
-      <p class="form-error" id="form-error"></p>
-      <button class="btn btn-primary btn-sm" id="btn-add-post">Հրապարակել</button>
-    </div>
-
     <div class="post-list" id="post-list"></div>
   </section>
 
@@ -469,8 +487,60 @@
       <p>Դասավանդողների ցուցակ և առարկայական բնութագրերը</p>
     </div>
 
-    <div class="add-post-panel hidden" id="add-teacher-panel">
-      <h2>Ավելացնել դասախոս</h2>
+    <div class="post-list" id="teacher-list"></div>
+  </section>
+
+</main>
+
+<!-- Create / edit post modal (opened from the admin dashboard, or from a post's "Փոխել" button) -->
+<div class="modal-backdrop hidden" id="post-modal" role="dialog" aria-modal="true" aria-labelledby="post-modal-title">
+  <div class="modal">
+    <h2 id="post-modal-title">Ստեղծել փոստ</h2>
+
+    <div class="field" id="modal-section-field">
+      <label for="modal-section">Ո՞ր բաժնի համար ենք փոստ ստեղծում</label>
+      <select id="modal-section"></select>
+    </div>
+
+    <div class="type-tabs" id="modal-type-tabs">
+      <button type="button" class="type-tab active" data-type="text">Տեքստ</button>
+      <button type="button" class="type-tab" data-type="image">Նկար</button>
+      <button type="button" class="type-tab" data-type="video">Տեսանյութ</button>
+    </div>
+
+    <div id="fields-text">
+      <div class="field">
+        <div class="label-row"><label for="input-text">Տեքստ</label><button type="button" class="bold-btn" data-bold-for="input-text" title="Թավ տեքստ (Ctrl+B)" aria-label="Թավ տեքստ">B</button></div>
+        <textarea id="input-text" placeholder="Գրիր հաղորդագրությունը..."></textarea>
+        <div class="hint">Նշիր տեքստը և սեղմիր B (կամ Ctrl+B)՝ թավ դարձնելու համար։ Թավ մասը երևում է **այսպես**, հրապարակվելուց հետո կլինի թավ։</div>
+      </div>
+    </div>
+
+    <div id="fields-image" class="hidden">
+      <div class="field">
+        <label for="input-image-url">Նկարի հղում (URL)</label>
+        <input type="url" id="input-image-url" placeholder="https://...">
+        <div class="hint">Նկարը չի պահվում կայքում, միայն հղումը՝ ինտերնետից։</div>
+      </div>
+      <div class="field">
+        <div class="label-row"><label for="input-image-caption">Ստորագրություն (ոչ պարտադիր)</label><button type="button" class="bold-btn" data-bold-for="input-image-caption" title="Թավ տեքստ (Ctrl+B)" aria-label="Թավ տեքստ">B</button></div>
+        <input type="text" id="input-image-caption" placeholder="Ստորագրություն...">
+      </div>
+    </div>
+
+    <div id="fields-video" class="hidden">
+      <div class="field">
+        <label for="input-video-url">Տեսանյութի հղում (YouTube, Vimeo կամ .mp4)</label>
+        <input type="url" id="input-video-url" placeholder="https://www.youtube.com/watch?v=...">
+        <div class="hint">Տեսանյութը կկցվի ուղղակիորեն էջում, առանց YouTube անցնելու։</div>
+      </div>
+      <div class="field">
+        <div class="label-row"><label for="input-video-caption">Ստորագրություն (ոչ պարտադիր)</label><button type="button" class="bold-btn" data-bold-for="input-video-caption" title="Թավ տեքստ (Ctrl+B)" aria-label="Թավ տեքստ">B</button></div>
+        <input type="text" id="input-video-caption" placeholder="Ստորագրություն...">
+      </div>
+    </div>
+
+    <div id="fields-teacher" class="hidden">
       <div class="field">
         <label for="input-teacher-name">Անուն Ազգանուն</label>
         <input type="text" id="input-teacher-name" placeholder="օր.՝ Անի Հակոբյան">
@@ -479,14 +549,16 @@
         <label for="input-teacher-link">Առարկայական բնութագրի հղում (URL)</label>
         <input type="url" id="input-teacher-link" placeholder="https://...">
       </div>
-      <p class="form-error" id="teacher-form-error"></p>
-      <button class="btn btn-primary btn-sm" id="btn-add-teacher">Ավելացնել</button>
     </div>
 
-    <div class="post-list" id="teacher-list"></div>
-  </section>
-
-</main>
+    <p class="form-error" id="form-error"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-modal-cancel">Չեղարկել</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btn-modal-submit">Հրապարակել</button>
+    </div>
+  </div>
+</div>
+<div class="toast hidden" id="toast" role="status"></div>
 
 <script>
   /* ============================================================
@@ -499,18 +571,18 @@
   };
 
   /* ---------- section definitions ---------- */
-  // These are ready-made reference links for the admins themselves — not a
-  // place to post new material. Clicking one just opens the linked file.
-  // Replace each url below with the real link to the corresponding document.
+  // Ավագանու սեփական բաժինները ("Մեր նյութերը"). Աշխատում են ճիշտ ինչպես
+  // ուսանողական ենթաբաժինները՝ նյութեր ստեղծվում, փոխվում և ջնջվում են,
+  // բայց երևում են ՄԻԱՅՆ ավագանուն (ուսանողների մենյուում չկան)։
   const ADMIN_OWN_SECTIONS = [
-    { id:'assignments',      label:'Հանձնարարություններ',       note:'Ուսանողներին տրված առաջադրանքներ', url:'https://example.com/assignments.txt' },
-    { id:'fundraising',      label:'Դրամահավաքներ',             note:'Ընթացիկ ֆինանսավորումներ', url:'https://example.com/fundraising.txt' },
-    { id:'announcements',    label:'Հայտարարություններ',        note:'Ընդհանուր ծանուցումներ', url:'https://example.com/announcements.txt' },
-    { id:'library-users',    label:'Գրադարան — օգտվողներ',      note:'Ով ինչ ունի իր մոտ', url:'https://example.com/library-users.txt' },
-    { id:'schedule-admin',   label:'Դասացուցակ',                note:'Շաբաթվա ժամանակացույց', url:'https://example.com/schedule.txt' },
-    { id:'videos-admin',     label:'Տեսանյութեր',               note:'Ուսանողական աշխատանքներ', url:'https://example.com/videos.txt' },
-    { id:'director-library', label:'Ռեժիսորական գրադարան',      note:'Ֆիլմեր և գրքեր', url:'https://example.com/director-library.txt' },
-    { id:'student-list',     label:'Ուսանողների ցուցակ',        note:'Դասարանի կազմը', url:'https://example.com/student-list.txt' },
+    { id:'assignments',      label:'Հանձնարարություններ',       note:'Ուսանողներին տրված առաջադրանքներ' },
+    { id:'fundraising',      label:'Դրամահավաքներ',             note:'Ընթացիկ ֆինանսավորումներ' },
+    { id:'announcements',    label:'Հայտարարություններ',        note:'Ընդհանուր ծանուցումներ' },
+    { id:'library-users',    label:'Գրադարան — օգտվողներ',      note:'Ով ինչ ունի իր մոտ' },
+    { id:'schedule-admin',   label:'Դասացուցակ',                note:'Շաբաթվա ժամանակացույց' },
+    { id:'videos-admin',     label:'Տեսանյութեր',               note:'Ուսանողական աշխատանքներ' },
+    { id:'director-library', label:'Ռեժիսորական գրադարան',      note:'Ֆիլմեր և գրքեր' },
+    { id:'student-list',     label:'Ուսանողների ցուցակ',        note:'Դասարանի կազմը' },
   ];
 
   // Complaints are actually generated by the site (students submit them),
@@ -619,16 +691,6 @@
     return btn;
   }
 
-  function makeLinkItem(def){
-    const a = document.createElement('a');
-    a.className = 'menu-item';
-    a.href = def.url;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.innerHTML = `<div class="label">${def.label}</div><div class="note">${def.note}</div>`;
-    return a;
-  }
-
   function openFromDefinition(def, backTo){
     if (def.special === 'teachers'){
       openTeachers(backTo);
@@ -639,7 +701,7 @@
 
   const adminOwnGrid = document.getElementById('admin-own-grid');
   ADMIN_OWN_SECTIONS.forEach(def => {
-    adminOwnGrid.appendChild(makeLinkItem(def));
+    adminOwnGrid.appendChild(makeMenuButton(def, () => openSection(def.id, 'admin')));
   });
   adminOwnGrid.appendChild(makeMenuButton(ADMIN_COMPLAINTS_SECTION, () => openSection(ADMIN_COMPLAINTS_SECTION.id, 'admin')));
 
@@ -723,6 +785,10 @@
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
   function escapeAttr(str){ return escapeHtml(str); }
+  // **տեքստ** → թավ։ Նախ escape ենք անում, ուստի HTML ներդնել հնարավոր չէ։
+  function formatRich(str){
+    return escapeHtml(str).replace(/\*\*([\s\S]+?)\*\*/g, '<strong>$1</strong>');
+  }
 
   function formatDate(iso){
     try{
@@ -768,21 +834,19 @@
   /* ---------- generic content section ---------- */
   const contentTitle = document.getElementById('content-title');
   const contentNote = document.getElementById('content-note');
-  const addPostPanel = document.getElementById('add-post-panel');
   const postList = document.getElementById('post-list');
-  const formError = document.getElementById('form-error');
+  let currentPosts = [];
 
   document.getElementById('btn-content-back').addEventListener('click', () => show(currentBack));
 
   async function openSection(sectionId, backTo){
     currentBack = backTo;
     const def = STUDENT_SECTIONS.find(s => s.id === sectionId) ||
+      ADMIN_OWN_SECTIONS.find(s => s.id === sectionId) ||
       (sectionId === ADMIN_COMPLAINTS_SECTION.id ? ADMIN_COMPLAINTS_SECTION : null);
     currentSectionId = sectionId;
     contentTitle.textContent = def.label;
     contentNote.textContent = def.note;
-    addPostPanel.classList.toggle('hidden', !isAdmin || sectionId === ADMIN_COMPLAINTS_SECTION.id);
-    resetForm();
     show('content');
     await renderPosts();
   }
@@ -804,7 +868,12 @@
         : configWarning();
       return;
     }
-    const posts = all.slice().reverse(); // newest first
+    // newest first (ըստ ամսաթվի; փոփոխված փոստը պահպանում է իր սկզբնական ամսաթիվը)
+    const posts = all.map((p, i) => ({ p, i })).sort((a, b) => {
+      const da = Date.parse(a.p.date) || 0, db = Date.parse(b.p.date) || 0;
+      return (db - da) || (b.i - a.i);
+    }).map(x => x.p);
+    currentPosts = posts;
     postList.innerHTML = '';
     if (posts.length === 0){
       postList.innerHTML = '<div class="empty-state">Այստեղ դեռ նյութ չկա։</div>';
@@ -816,19 +885,22 @@
 
       let body = '';
       if (post.type === 'text'){
-        body = `<div class="post-text">${escapeHtml(post.text || '')}</div>`;
+        body = `<div class="post-text">${formatRich(post.text || '')}</div>`;
       } else if (post.type === 'image'){
         body = `<img src="${escapeAttr(post.url)}" alt="${escapeAttr(post.caption || '')}" loading="lazy">`;
-        if (post.caption) body += `<div class="post-caption">${escapeHtml(post.caption)}</div>`;
+        if (post.caption) body += `<div class="post-caption">${formatRich(post.caption)}</div>`;
       } else if (post.type === 'video'){
         body = renderVideo(post.url);
-        if (post.caption) body += `<div class="post-caption">${escapeHtml(post.caption)}</div>`;
+        if (post.caption) body += `<div class="post-caption">${formatRich(post.caption)}</div>`;
       }
 
       card.innerHTML = `
         <div class="post-meta">
           <span>${formatDate(post.date)}</span>
-          ${isAdmin ? `<button class="btn btn-danger btn-sm" data-id="${escapeAttr(post.id)}">Ջնջել</button>` : ''}
+          ${isAdmin ? `<div class="post-actions">
+            ${currentSectionId !== ADMIN_COMPLAINTS_SECTION.id ? `<button class="btn btn-secondary btn-sm" data-edit-id="${escapeAttr(post.id)}">Փոխել</button>` : ''}
+            <button class="btn btn-danger btn-sm" data-id="${escapeAttr(post.id)}">Ջնջել</button>
+          </div>` : ''}
         </div>
         ${body}
       `;
@@ -836,6 +908,12 @@
     });
 
     if (isAdmin){
+      postList.querySelectorAll('button[data-edit-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const post = currentPosts.find(p => String(p.id) === btn.dataset.editId);
+          if (post) openPostModal({ post, sectionId: currentSectionId });
+        });
+      });
       postList.querySelectorAll('button[data-id]').forEach(btn => {
         btn.addEventListener('click', async () => {
           btn.disabled = true;
@@ -847,90 +925,260 @@
     }
   }
 
-  /* --- add-post form --- */
+  /* ---------- create / edit post modal ---------- */
+  const modalEl = document.getElementById('post-modal');
+  const modalTitle = document.getElementById('post-modal-title');
+  const modalSectionField = document.getElementById('modal-section-field');
+  const modalSection = document.getElementById('modal-section');
+  const modalTypeTabs = document.getElementById('modal-type-tabs');
+  const modalSubmit = document.getElementById('btn-modal-submit');
+  const formError = document.getElementById('form-error');
+  const fieldTeacher = document.getElementById('fields-teacher');
+  const toastEl = document.getElementById('toast');
+
   let activeType = 'text';
-  const typeTabs = Array.from(document.querySelectorAll('.type-tab'));
+  let editing = null;          // { post, sectionId } when editing an existing post
+  let submitting = false;
+
+  const typeTabs = Array.from(modalTypeTabs.querySelectorAll('.type-tab'));
   const fieldGroups = {
     text: document.getElementById('fields-text'),
     image: document.getElementById('fields-image'),
     video: document.getElementById('fields-video'),
   };
+
+  // section picker: Ավագանու բաժիններ + Ուսանողների բաժիններ
+  (function buildSectionPicker(){
+    const addGroup = (label, list) => {
+      const g = document.createElement('optgroup');
+      g.label = label;
+      list.forEach(def => {
+        const o = document.createElement('option');
+        o.value = def.id;
+        o.textContent = def.label;
+        g.appendChild(o);
+      });
+      modalSection.appendChild(g);
+    };
+    addGroup('Ավագանի — Մեր նյութերը', ADMIN_OWN_SECTIONS);
+    addGroup('Ուսանողների բաժիններ', STUDENT_SECTIONS);
+  })();
+
+  function syncModalFields(){
+    const isTeacher = !editing && modalSection.value === 'teachers';
+    modalTypeTabs.classList.toggle('hidden', !!editing || isTeacher);
+    Object.entries(fieldGroups).forEach(([type, el]) => el.classList.toggle('hidden', isTeacher || type !== activeType));
+    fieldTeacher.classList.toggle('hidden', !isTeacher);
+    typeTabs.forEach(t => t.classList.toggle('active', t.dataset.type === activeType));
+  }
+
   typeTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       activeType = tab.dataset.type;
-      typeTabs.forEach(t => t.classList.toggle('active', t === tab));
-      Object.entries(fieldGroups).forEach(([type, el]) => el.classList.toggle('hidden', type !== activeType));
       formError.textContent = '';
+      syncModalFields();
     });
   });
+  modalSection.addEventListener('change', () => { formError.textContent = ''; syncModalFields(); });
 
-  function resetForm(){
-    activeType = 'text';
-    typeTabs.forEach(t => t.classList.toggle('active', t.dataset.type === 'text'));
-    Object.entries(fieldGroups).forEach(([type, el]) => el.classList.toggle('hidden', type !== 'text'));
-    document.getElementById('input-text').value = '';
-    document.getElementById('input-image-url').value = '';
-    document.getElementById('input-image-caption').value = '';
-    document.getElementById('input-video-url').value = '';
-    document.getElementById('input-video-caption').value = '';
+  function clearModalInputs(){
+    ['input-text','input-image-url','input-image-caption','input-video-url','input-video-caption',
+     'input-teacher-name','input-teacher-link'].forEach(id => { document.getElementById(id).value = ''; });
     formError.textContent = '';
   }
 
-  document.getElementById('btn-add-post').addEventListener('click', async () => {
-    formError.textContent = '';
-    let post = null;
+  function openPostModal(opts){
+    opts = opts || {};
+    submitting = false;
+    modalSubmit.disabled = false;
+    clearModalInputs();
+    if (opts.post){
+      editing = { post: opts.post, sectionId: opts.sectionId };
+      activeType = opts.post.type;
+      modalTitle.textContent = 'Փոխել փոստը';
+      modalSubmit.textContent = 'Պահպանել';
+      modalSectionField.classList.add('hidden');
+      if (activeType === 'text'){
+        document.getElementById('input-text').value = opts.post.text || '';
+      } else if (activeType === 'image'){
+        document.getElementById('input-image-url').value = opts.post.url || '';
+        document.getElementById('input-image-caption').value = opts.post.caption || '';
+      } else if (activeType === 'video'){
+        document.getElementById('input-video-url').value = opts.post.url || '';
+        document.getElementById('input-video-caption').value = opts.post.caption || '';
+      }
+    } else {
+      editing = null;
+      activeType = 'text';
+      modalTitle.textContent = 'Ստեղծել փոստ';
+      modalSubmit.textContent = 'Հրապարակել';
+      modalSectionField.classList.remove('hidden');
+      if (opts.sectionId) modalSection.value = opts.sectionId;
+    }
+    syncModalFields();
+    modalEl.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
 
-    if (activeType === 'text'){
-      const text = document.getElementById('input-text').value.trim();
-      if (!text){ formError.textContent = 'Գրիր տեքստը։'; return; }
-      post = { type:'text', text, date: new Date().toISOString() };
-    } else if (activeType === 'image'){
-      const url = document.getElementById('input-image-url').value.trim();
-      if (!url){ formError.textContent = 'Մուտքագրիր նկարի հղումը։'; return; }
-      const caption = document.getElementById('input-image-caption').value.trim();
-      post = { type:'image', url, caption, date: new Date().toISOString() };
-    } else if (activeType === 'video'){
-      const url = document.getElementById('input-video-url').value.trim();
-      if (!url){ formError.textContent = 'Մուտքագրիր տեսանյութի հղումը։'; return; }
-      const caption = document.getElementById('input-video-caption').value.trim();
-      post = { type:'video', url, caption, date: new Date().toISOString() };
+  function closePostModal(){
+    modalEl.classList.add('hidden');
+    document.body.style.overflow = '';
+    editing = null;
+  }
+
+  let toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.remove('hidden');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.add('hidden'), 4000);
+  }
+
+  document.getElementById('btn-create-post').addEventListener('click', () => openPostModal());
+  document.getElementById('btn-modal-cancel').addEventListener('click', closePostModal);
+  modalEl.addEventListener('mousedown', (e) => { if (e.target === modalEl) closePostModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modalEl.classList.contains('hidden')) closePostModal();
+  });
+
+  /* --- bold text: wraps the selection in **…** (Ctrl+B / B button) --- */
+  function toggleBold(el){
+    const s = el.selectionStart, e = el.selectionEnd, v = el.value;
+    const sel = v.slice(s, e);
+    if (s >= 2 && v.slice(s-2, s) === '**' && v.slice(e, e+2) === '**'){
+      el.value = v.slice(0, s-2) + sel + v.slice(e+2);
+      el.setSelectionRange(s-2, e-2);
+    } else if (sel.length >= 4 && sel.startsWith('**') && sel.endsWith('**')){
+      el.value = v.slice(0, s) + sel.slice(2, -2) + v.slice(e);
+      el.setSelectionRange(s, e-4);
+    } else {
+      el.value = v.slice(0, s) + '**' + sel + '**' + v.slice(e);
+      if (sel) el.setSelectionRange(s, e+4); else el.setSelectionRange(s+2, s+2);
+    }
+    el.focus();
+  }
+  document.querySelectorAll('.bold-btn').forEach(btn => {
+    const target = document.getElementById(btn.dataset.boldFor);
+    btn.addEventListener('mousedown', (e) => e.preventDefault()); // don't lose the selection
+    btn.addEventListener('click', () => toggleBold(target));
+    target.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b'){
+        e.preventDefault();
+        toggleBold(target);
+      }
+    });
+  });
+
+  /* --- submit (create / save / add teacher) --- */
+  modalSubmit.addEventListener('click', async () => {
+    if (!isAdmin || submitting) return;
+    formError.textContent = '';
+
+    const isTeacher = !editing && modalSection.value === 'teachers';
+    const originalLabel = modalSubmit.textContent;
+    const setBusy = (busy, label) => {
+      submitting = busy;
+      modalSubmit.disabled = busy;
+      modalSubmit.textContent = busy ? label : originalLabel;
+    };
+    const failText = (res, fallback) => apiConfigured()
+      ? fallback
+      : 'Google Sheets-ի կապը կարգավորված չէ (տես CONFIG.WEB_APP_URL)։';
+
+    /* teacher */
+    if (isTeacher){
+      const name = document.getElementById('input-teacher-name').value.trim();
+      const link = document.getElementById('input-teacher-link').value.trim();
+      if (!name){ formError.textContent = 'Գրիր դասախոսի անունը։'; return; }
+      setBusy(true, 'Ավելացվում է…');
+      const res = await apiRequest({ action:'addTeacher', name, subjectLink: link, pin: ADMIN_PIN });
+      setBusy(false);
+      if (!res.ok){ formError.textContent = failText(res, 'Չհաջողվեց ավելացնել։ Փորձիր կրկին։'); return; }
+      closePostModal();
+      showToast('Դասախոսն ավելացվեց «Դասախոսներ» բաժնում');
+      return;
     }
 
-    const btn = document.getElementById('btn-add-post');
-    const originalBtnText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Հրապարակվում է…';
+    /* regular post */
+    const type = activeType;
+    const date = editing ? (editing.post.date || new Date().toISOString()) : new Date().toISOString();
+    let post = null;
+    if (type === 'text'){
+      const text = document.getElementById('input-text').value.trim();
+      if (!text){ formError.textContent = 'Գրիր տեքստը։'; return; }
+      post = { type:'text', text };
+    } else if (type === 'image'){
+      const url = document.getElementById('input-image-url').value.trim();
+      if (!url){ formError.textContent = 'Մուտքագրիր նկարի հղումը։'; return; }
+      post = { type:'image', url, caption: document.getElementById('input-image-caption').value.trim() };
+    } else if (type === 'video'){
+      const url = document.getElementById('input-video-url').value.trim();
+      if (!url){ formError.textContent = 'Մուտքագրիր տեսանյութի հղումը։'; return; }
+      post = { type:'video', url, caption: document.getElementById('input-video-caption').value.trim() };
+    }
+
+    const sectionId = editing ? editing.sectionId : modalSection.value;
+    const wasEditing = !!editing;
+    const editingPost = editing && editing.post;
+    setBusy(true, wasEditing ? 'Պահպանվում է…' : 'Հրապարակվում է…');
+
+    const finish = () => {
+      setBusy(false);
+      closePostModal();
+      if (!screens.content.classList.contains('hidden')) renderPosts();
+      const def = [...ADMIN_OWN_SECTIONS, ...STUDENT_SECTIONS].find(s => s.id === sectionId);
+      showToast(wasEditing ? 'Փոփոխությունները պահպանվեցին'
+                           : `Փոստը հրապարակվեց «${def ? def.label : sectionId}» բաժնում`);
+    };
+    const fail = (res) => {
+      setBusy(false);
+      formError.textContent = res.error === 'timeout'
+        ? 'Պատասխանը ուշացավ, բայց հնարավոր է փոստն արդեն պահպանվել է. ստուգիր բաժինը՝ կրկնակի չհրապարակելու համար։'
+        : failText(res, 'Չհաջողվեց պահպանել։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։');
+      if (currentSectionId === sectionId && !screens.content.classList.contains('hidden')) renderPosts();
+    };
+
+    /* EDIT: փոխում ենք նույն տողը Sheet-ում (updatePost) */
+    if (wasEditing){
+      const upd = await apiRequest({
+        action:'updatePost', sectionId, id: editingPost.id,
+        text: post.text || '', url: post.url || '', caption: post.caption || '',
+        pin: ADMIN_PIN
+      });
+      if (upd.ok){ finish(); return; }
+      // Եթե Apps Script-ը դեռ նոր տարբերակով չի deploy արվել, անցնում ենք
+      // հին եղանակին՝ նոր փոստ + հինի ջնջում (ամսաթիվը պահվում է)
+      if (upd.error !== 'unknown action'){ fail(upd); return; }
+    }
+
+    /* CREATE (կամ edit-ի fallback) */
     const res = await apiRequest({
       action:'addPost',
-      sectionId: currentSectionId,
+      sectionId,
       type: post.type,
       text: post.text || '',
       url: post.url || '',
       caption: post.caption || '',
-      date: post.date,
+      date,
       pin: ADMIN_PIN
     });
-    btn.disabled = false;
-    btn.textContent = originalBtnText;
-    if (!res.ok){
-      if (res.error === 'timeout'){
-        formError.textContent = 'Պատասխանը ուշացավ, բայց հնարավոր է նյութն արդեն հրապարակվել է Sheet-ում. ստուգիր ցուցակը ներքևում, կամ բացիր բաժինը կրկին։';
-      } else {
-        formError.textContent = apiConfigured()
-          ? 'Չհաջողվեց հրապարակել։ Ստուգիր ինտերնետ կապը և փորձիր կրկին։'
-          : 'Google Sheets-ի կապը կարգավորված չէ (տես CONFIG.WEB_APP_URL)։';
+    if (!res.ok){ fail(res); return; }
+
+    if (wasEditing){
+      const del = await apiRequest({ action:'deletePost', sectionId, id: editingPost.id, pin: ADMIN_PIN });
+      if (!del.ok){
+        setBusy(false);
+        modalSubmit.disabled = true; // նոր տարբերակն արդեն պահպանված է
+        formError.textContent = 'Նոր տարբերակը պահպանվեց, բայց հները չջնջվեց։ Փակիր պատուհանը և ջնջիր հները ձեռքով։';
+        renderPosts();
+        return;
       }
-      renderPosts(); // թարմացնենք ցուցակը, գուցե իրականում հաջողվել է
-      return;
     }
-    resetForm();
-    renderPosts();
+    finish();
   });
 
   /* ---------- teachers screen ---------- */
-  const addTeacherPanel = document.getElementById('add-teacher-panel');
   const teacherList = document.getElementById('teacher-list');
-  const teacherFormError = document.getElementById('teacher-form-error');
 
   document.getElementById('btn-teachers-back').addEventListener('click', () => show(teachersBack));
 
@@ -942,10 +1190,6 @@
 
   async function openTeachers(backTo){
     teachersBack = backTo;
-    addTeacherPanel.classList.toggle('hidden', !isAdmin);
-    teacherFormError.textContent = '';
-    document.getElementById('input-teacher-name').value = '';
-    document.getElementById('input-teacher-link').value = '';
     show('teachers');
     await renderTeachers();
   }
@@ -1038,29 +1282,6 @@
       });
     }
   }
-
-  document.getElementById('btn-add-teacher').addEventListener('click', async () => {
-    teacherFormError.textContent = '';
-    const name = document.getElementById('input-teacher-name').value.trim();
-    const link = document.getElementById('input-teacher-link').value.trim();
-    if (!name){
-      teacherFormError.textContent = 'Գրիր դասախոսի անունը։';
-      return;
-    }
-    const btn = document.getElementById('btn-add-teacher');
-    btn.disabled = true;
-    const res = await apiRequest({ action:'addTeacher', name, subjectLink: link, pin: ADMIN_PIN });
-    btn.disabled = false;
-    if (!res.ok){
-      teacherFormError.textContent = apiConfigured()
-        ? 'Չհաջողվեց ավելացնել։ Փորձիր կրկին։'
-        : 'Google Sheets-ի կապը կարգավորված չէ (տես CONFIG.WEB_APP_URL)։';
-      return;
-    }
-    document.getElementById('input-teacher-name').value = '';
-    document.getElementById('input-teacher-link').value = '';
-    renderTeachers();
-  });
 </script>
 <audio id="bg-music" src="music.mp3" preload="auto"></audio>
 <script>
